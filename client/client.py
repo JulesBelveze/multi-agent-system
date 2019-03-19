@@ -14,23 +14,24 @@ class Client:
     def solve_level(self):
         msg_local("Solving level...")
 
+    def print_solution(self):
+        msg_local("42")
+
 
 def main(args):
-    if args.level_name:
-        msg_local(args.level_name)
-        
     # Read server messages from stdin.
     server_messages = sys.stdin
 
     # Use stderr to print to console through server.
     msg_local("Poking starfish to life...")
-    startfish_client = Client(server_messages)
+    starfish = Client(server_messages)
 
+    starfish.solve_level()
+    starfish.print_solution()
 
 if __name__ == "__main__":
     # Process arguments
-    parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-    parser.add_argument('--level', dest="level_name", help='Provide path to level to run client locally', metavar="FILE")
+    parser = ArgumentParser(description='Starfish client for solving transportation tasks.')]
 
     args = parser.parse_args()
 
