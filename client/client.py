@@ -31,7 +31,7 @@ def main(args):
 
 if __name__ == "__main__":
     # Process arguments
-    parser = ArgumentParser(description='Starfish client for solving transportation tasks.')]
+    parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
 
     args = parser.parse_args()
 
