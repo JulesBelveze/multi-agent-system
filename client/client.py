@@ -1,22 +1,20 @@
 import sys
+import fileinput
 import numpy as np
-
 from argparse import ArgumentParser
 
 
 def msg_server(message):
-    print("{}".format(message), file=sys.stderr, flush=True)
+    print(message, file=sys.stdout, flush=True)
 
-
-def msg_local(message):
-    print("{}".format(message), file=sys.stderr, flush=True)
+def msg_error(message):
+    print(message, file=sys.stderr, flush=True)
 
 
 class SearchClient:
     def __init__(self, server_args):
         try:
             line = server_args.readline().rstrip()
-
             # catching level colors meta-data that are wrapped between #colors and #initial lines
             while line != "#colors":
                 line = server_args.readline.rstrip()
@@ -76,22 +74,23 @@ class SearchClient:
 
 
     def solve_level(self):
-        msg_local("Solving level...")
+        msg_error("Solving level...")
 
     def print_solution(self):
-        msg_local("42")
-
+        msg_error("42")
 
 def main(args):
+    msg_server("Starfish")
+    
     # Read server messages from stdin.
     server_messages = sys.stdin
 
-    # Use stderr to print to console through server.
-    msg_local("Poking starfish to life...")
-    starfish = SearchClient(server_messages)
-
-    starfish.solve_level()
-    starfish.print_solution()
+    # Create client using server messages
+    starfish_client = Client(server_messages)
+    
+    # Solve and print
+    starfish_client.solve_level()
+    starfish_client.print_solution()
 
 
 if __name__ == "__main__":
