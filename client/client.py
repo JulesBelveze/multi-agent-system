@@ -12,7 +12,7 @@ def msg_error(message):
     print(message, file=sys.stderr, flush=True)
 
 
-class SearchClient:
+class Client:
     def __init__(self, server_args):
         try:
             line = server_args.readline().rstrip()
