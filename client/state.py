@@ -18,12 +18,7 @@ class State:
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
 
-        self._hash = None
-
         if copy is None:
-            self.max_col = kwargs['max_col']
-            self.max_row = kwargs['max_row']
-
             self.agents = {}
             self.boxes = {}
 
@@ -32,9 +27,6 @@ class State:
 
             self.g = 0
         else:
-            self.max_col = copy.max_col
-            self.max_row = copy.max_row
-
             self.agents = copy.agents
             self.boxes = copy.boxes
 
@@ -46,7 +38,7 @@ class State:
     def __lt__(self, other):
         return True
 
-    def get_children(self, walls):
+    def get_children(self, walls, agent):
         '''
         Returns a list of child states attained from applying every applicable action in the current state.
         The order of the actions is random.
@@ -56,60 +48,60 @@ class State:
         for action in ALL_ACTIONS:
             new_agents = dict(self.agents)  # copying the agents dict
             # check if action is applicable
-            for agent, value in self.agents.items():
-                agent_color = value[2]
-                new_row_ag = value[0] + action.agents_dir[agent][0]
-                new_col_ag = value[1] + action.agents_dir[agent][1]
-                new_agents[agent] = (new_row_ag, new_col_ag, value[2])
+            value = self.agents[agent]
+            agent_color = value[2]
+            new_row_ag = value[0] + action.agents_dir[agent][0]
+            new_col_ag = value[1] + action.agents_dir[agent][1]
+            new_agents[agent] = (new_row_ag, new_col_ag, value[2])
 
-                # checks for action move
-                if action.action_type is ActionType.Move:
-                    if self.is_free(walls, new_row_ag, new_col_ag):
-                        child = State(self)
-                        child.agents = new_agents
-                        child.parent = self
-                        child.action = action
-                        child.g += 1
-                        child.append(child)
-
-                # checks for action push
-                elif action.action_type is ActionType.Push:
-                    is_right_box_at, right_box = self.right_box_at(new_row_ag, new_col_ag, agent_color)
-                    if is_right_box_at:
-                        new_box_row = new_row_ag + action.box_dir.d_row
-                        new_box_col = new_col_ag + action.box.dir.d_col
-                        if self.is_free(walls, new_box_row, new_box_col):
-                            child = State(self)
-                            child.agents = new_agents
-                            child.boxes[right_box][0] = new_box_row
-                            child.boxes[right_box][1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.g += 1
-                            children.append(child)
-
-                # checks for action Pull
-                elif action.action_type is ActionType.Pull:
-                    is_right_box_at, right_box = self.right_box_at(new_box_row + action.box_dir.d_row,
-                                                                   new_box_col + action.box_dir.d_col)
-                    if is_right_box_at:
-                        new_box_row = self.agents[agent][0]
-                        new_box_col = self.agents[agent][1]
-                        if self.is_free(walls, new_row_ag, new_row_ag):
-                            child = State(self)
-                            child.agents = new_agents
-                            child.boxes[right_box][0] = new_box_row
-                            child.boxes[right_box][1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.g += 1
-                            children.append(child)
-                elif action.action_type is ActionType.Wait:
+            # checks for action move
+            if action.action_type is ActionType.Move:
+                if self.is_free(walls, new_row_ag, new_col_ag):
                     child = State(self)
+                    child.agents = new_agents
                     child.parent = self
                     child.action = action
                     child.g += 1
-                    children.append(child)
+                    child.append(child)
+
+            # checks for action push
+            elif action.action_type is ActionType.Push:
+                is_right_box_at, right_box = self.right_box_at(new_row_ag, new_col_ag, agent_color)
+                if is_right_box_at:
+                    new_box_row = new_row_ag + action.box_dir.d_row
+                    new_box_col = new_col_ag + action.box.dir.d_col
+                    if self.is_free(walls, new_box_row, new_box_col):
+                        child = State(self)
+                        child.agents = new_agents
+                        child.boxes[right_box][0] = new_box_row
+                        child.boxes[right_box][1] = new_box_col
+                        child.parent = self
+                        child.action = action
+                        child.g += 1
+                        children.append(child)
+
+            # checks for action Pull
+            elif action.action_type is ActionType.Pull:
+                is_right_box_at, right_box = self.right_box_at(new_box_row + action.box_dir.d_row,
+                                                               new_box_col + action.box_dir.d_col)
+                if is_right_box_at:
+                    new_box_row = self.agents[agent][0]
+                    new_box_col = self.agents[agent][1]
+                    if self.is_free(walls, new_row_ag, new_row_ag):
+                        child = State(self)
+                        child.agents = new_agents
+                        child.boxes[right_box][0] = new_box_row
+                        child.boxes[right_box][1] = new_box_col
+                        child.parent = self
+                        child.action = action
+                        child.g += 1
+                        children.append(child)
+            elif action.action_type is ActionType.Wait:
+                child = State(self)
+                child.parent = self
+                child.action = action
+                child.g += 1
+                children.append(child)
 
         return children
 
@@ -153,4 +145,3 @@ class State:
             state = state.parent
         plan.reverse()
         return plan
-
