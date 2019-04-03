@@ -1,5 +1,7 @@
 import sys
 import fileinput
+from agent import Agent
+from state import State
 import numpy as np
 from argparse import ArgumentParser
 
@@ -94,7 +96,11 @@ class Client:
 
     def solve_level(self, strategy):
         msg_error("Solving level...")
-        strategy.add_to_frontier(self.initial_state)
+
+        # creating agents objects
+        agents_lists = {}
+        for agent_key in self.initial_state.agents.keys():
+            agents_lists[agent_key] = Agent(self.initial_state, self.goal_level, agent_key)
 
         iterations = 0
         while True:
@@ -124,7 +130,7 @@ def main(args):
     server_messages = sys.stdin
 
     # Create client using server messages
-    starfish_client = SearchClient(server_messages)
+    starfish_client = Client(server_messages)
 
     strategy = None
 
