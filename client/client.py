@@ -1,10 +1,14 @@
 import sys
 import fileinput
-from agent import Agent
+#from agent import Agent
 from state import State
 import numpy as np
 from argparse import ArgumentParser
+import io
+import smt
 
+#Debugging = True 
+debug = True
 
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
@@ -128,6 +132,15 @@ def main(args):
 
     # Read server messages from stdin.
     server_messages = sys.stdin
+
+     #Testing
+    if debug == True:
+        levelname = "MAExample" 
+        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
+        print("Level name:", levelname)
+        server_messages = smt.sim_load_lvl(levelname)
+        print("Level loaded successfully!")
+
 
     # Create client using server messages
     starfish_client = Client(server_messages)
