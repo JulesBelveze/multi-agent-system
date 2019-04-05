@@ -1,15 +1,13 @@
-from state import State
+
 
 class Agent:
-    def __init__(self, initial_state: State, goal_state: 'State', agent_key):
+    def __init__(self, initial_state: 'State', goal_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
         self.initial_state = initial_state
-        self.currentState = 0
-        
 
-        find_path_to_goal(goal_state)
+        #self.find_path_to_goal(goal_state)
 
-    def find_path_to_goal(self, goal_state):
+    def find_path_to_goal(self, walls, goal_state):
         explored = []
         frontier = []
         frontier.append(self.initial_state)

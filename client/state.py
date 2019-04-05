@@ -1,5 +1,5 @@
 from action import ALL_ACTIONS, ActionType
-
+#from action import ALL_ACTIONS, ActionType
 
 class State:
     def __init__(self, copy: 'State' = None, **kwargs):
@@ -17,6 +17,7 @@ class State:
 
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
+        self._hash = None
         if copy is None:
             self.agents = {}
             self.boxes = {}
@@ -24,7 +25,7 @@ class State:
             self.parent = None
             self.action = None
 
-            self.g = 0
+            self.depth = 0
         else:
             self.agents = copy.agents
             self.boxes = copy.boxes
@@ -32,38 +33,53 @@ class State:
             self.parent = copy.parent
             self.action = copy.action
 
-            self.g = copy.g
+            self.depth = copy.depth
 
-    def __lt__(self, other):
-        return True
-
-    def get_children(self, walls, agent):
+    def get_children(self, walls, agent_key):
         '''
         Returns a list of child states attained from applying every applicable action in the current state.
         The order of the actions is random.
         '''
         children = []
 
+        agent = self.agents.get(agent_key)
         for action in ALL_ACTIONS:
-            new_agents = dict(self.agents)  # copying the agents dict
-            # check if action is applicable
-            for agent, value in self.agents.items():
-                agent_color = value[2]
-                new_row_ag = value[0] + action.agents_dir[agent][0]
-                new_col_ag = value[1] + action.agents_dir[agent][1]
-                new_agents[agent] = (new_row_ag, new_col_ag, value[2])
+            new_row = agent[0] + action.agent_dir.d_row
+            new_col = agent[1] + action.agent_dir.d_col
 
-                # checks for action move
+            if self.is_free(walls, new_row, new_col):
+                child = State(self)
+
                 if action.action_type is ActionType.Move:
-                    if self.is_free(walls, new_row_ag, new_col_ag):
-                        child = State(self)
-                        child.agents = new_agents
-                        child.parent = self
-                        child.action = action
-                        child.g += 1
-                        child.append(child)
+                    child.agents.get(agent_key)[0] = new_row
+                    child.agents.get(agent_key)[1] = new_col
+                    child.parent = self
+                    child.action = action
+                    child.depth += 1
+                    children.append(child)
 
-                # checks for action push
+                elif action.action_type is ActionType.Push:
+                    child.agents.get(agent_key)[0] = new_row
+                    child.agents.get(agent_key)[1] = new_col
+                    child.parent = self
+                    child.action = action
+                    child.depth += 1
+
+                elif action.action_type is ActionType.Pull:
+                    child.agents.get(agent_key)[0] = new_row
+                    child.agents.get(agent_key)[1] = new_col
+                    child.parent = self
+                    child.action = action
+                    child.depth += 1
+
+                elif action.action_type is ActionType.Wait:
+                    child.parent = self
+                    child.action = action
+                    child.depth += 1
+
+                children.append(child)
+
+        '''
                 elif action.action_type is ActionType.Push:
                     is_right_box_at, right_box = self.right_box_at(new_row_ag, new_col_ag, agent_color)
                     if is_right_box_at:
@@ -102,7 +118,7 @@ class State:
                     child.g += 1
                     children.append(child)
 
-        return children
+        return children'''
 
     def is_free(self, walls, row, col):
         '''Function checking if a given position is free'''
