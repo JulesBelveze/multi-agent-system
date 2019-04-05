@@ -165,10 +165,11 @@ class State:
         '''Checking if state is the initial one by checking if it has a parent state'''
         return self.parent is None
 
-    def is_goal_state(self, boxes_goal):
-        '''Checking if state is goal by checking if the box dictionary is the same than
-        the one of the goal state'''
-        return self.boxes == boxes_goal
+    def is_goal_state(self, goal_state, box_key: 'str' = None):
+        '''Check if current box dictionary (or individual box) matches goal box dictionary'''
+        if box_key is not None:
+            return self.boxes.get(box_key) == goal_state.boxes.get(box_key)
+        return self.boxes == goal_state.boxes
 
     def extract_plan(self):
         plan = []

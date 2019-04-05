@@ -3,6 +3,7 @@ import fileinput
 import numpy as np
 from argparse import ArgumentParser
 
+from state import State
 
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
@@ -55,9 +56,15 @@ class Client:
             sys.exit()
 
         # Find agents and subgoals
+        '''#todo'''
 
+        #create initial and goal state
+        self.initial_state = State()
+        self.goal_state = State()
 
-        #self.initial_state = State()  # TO BE CREATED
+        # update values of initial and goal states (boxes, agents)
+        '''#todo'''
+
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
         self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
 

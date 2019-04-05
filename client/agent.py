@@ -1,4 +1,4 @@
-
+from pathing import PathingBestFirst
 
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
@@ -6,24 +6,33 @@ class Agent:
         self.initial_state = initial_state
         self.goal_state = None
         self.box_key = None
+        self.path_finder = PathingBestFirst()
 
     def assign_goal(self, goal_state: 'State', box_key: 'str'):
         self.goal_state = goal_state
         self.box_key = box_key
+        # Assign goal to pathing
 
     def has_goal(self):
         if self.goal_state is None or self.box_key is None:
             return False
-
         return True
 
     def find_path_to_goal(self, walls, goal_state):
-        explored = []
-        frontier = []
-        frontier.append(self.initial_state)
-        
-        leaf = frontier.pop()
-        #for child_state in leaf.get_children(self.agent_key)
-        # fill "states" list
-        #pick goal
+        self.path_finder.add_to_frontier(self.initial_state)
 
+        iterations = 0   #todo: this is a temp hack and will go away
+        while iterations < 5000:
+            if self.path_finder.frontier_count() == 0:
+                return None
+            
+            current = self.path_finder.get_from_frontier()
+
+            if current.is_goal_state(self.goal_state, self.box_key):
+                return current.extract_plan()
+            
+            self.path_finder.add_to_explored(current)
+            for child_state in current.get_children(walls):
+                if not self.path_finder.is_explored(child_state) and not self.path_finder.in_frontier(child_state):
+                    self.path_finder.add_to_frontier(child_state)
+        return None
