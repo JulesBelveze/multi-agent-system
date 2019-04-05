@@ -1,4 +1,5 @@
 class Direction:
+    N = E = S = W = None
     '''
     Do not instantiate outside this file
     '''
@@ -12,10 +13,11 @@ class Direction:
 
 Direction.N = Direction('N', -1, 0)
 Direction.E = Direction('E', 0, 1)
-Direction.S = Direction('S', 0, 1)
+Direction.S = Direction('S', 1, 0)
 Direction.W = Direction('W', 0, -1)
 
 class ActionType:
+    Move = Push = Pull = None
     '''
     Do not instantiate outside this file
     '''
@@ -26,9 +28,9 @@ class ActionType:
         return self.name
 
 ActionType.Move = ActionType("Move")
-ActionType.Push = ActionType("Pull")
-ActionType.Pull = ActionType("Push")
-ActionType.Wait = ActionType("wait")
+ActionType.Push = ActionType("Push")
+ActionType.Pull = ActionType("Pull")
+ActionType.Wait = ActionType("Wait")
 
 class Action:
     '''
@@ -58,3 +60,6 @@ for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
         if agent_dir is not box_dir:
             # If not same directions
             ALL_ACTIONS.append(Action(ActionType.Pull, agent_dir, box_dir))
+
+for a in ALL_ACTIONS:
+    print(a)
