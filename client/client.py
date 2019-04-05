@@ -54,7 +54,10 @@ class Client:
         except Exception:
             sys.exit()
 
-        self.initial_state = State()  # TO BE CREATED
+        # Find agents and subgoals
+
+
+        #self.initial_state = State()  # TO BE CREATED
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
         self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
 
@@ -124,7 +127,7 @@ def main(args):
     server_messages = sys.stdin
 
     # Create client using server messages
-    starfish_client = SearchClient(server_messages)
+    starfish_client = Client(server_messages)
 
     strategy = None
 

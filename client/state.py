@@ -17,13 +17,7 @@ class State:
 
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
-
-        self._hash = None
-
         if copy is None:
-            self.max_col = kwargs['max_col']
-            self.max_row = kwargs['max_row']
-
             self.agents = {}
             self.boxes = {}
 
@@ -32,9 +26,6 @@ class State:
 
             self.g = 0
         else:
-            self.max_col = copy.max_col
-            self.max_row = copy.max_row
-
             self.agents = copy.agents
             self.boxes = copy.boxes
 
@@ -46,7 +37,7 @@ class State:
     def __lt__(self, other):
         return True
 
-    def get_children(self, walls):
+    def get_children(self, walls, agent):
         '''
         Returns a list of child states attained from applying every applicable action in the current state.
         The order of the actions is random.
