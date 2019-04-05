@@ -60,6 +60,3 @@ for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
         if agent_dir is not box_dir:
             # If not same directions
             ALL_ACTIONS.append(Action(ActionType.Pull, agent_dir, box_dir))
-
-for a in ALL_ACTIONS:
-    print(a)
