@@ -1,11 +1,21 @@
 
 
 class Agent:
-    def __init__(self, initial_state: 'State', goal_state: 'State', agent_key: 'str'):
+    def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
         self.initial_state = initial_state
+        self.goal_state = None
+        self.box_key = None
 
-        #self.find_path_to_goal(goal_state)
+    def assign_goal(self, goal_state: 'State', box_key: 'str'):
+        self.goal_state = goal_state
+        self.box_key = box_key
+
+    def has_goal(self):
+        if self.goal_state is None or self.box_key is None:
+            return False
+
+        return True
 
     def find_path_to_goal(self, walls, goal_state):
         explored = []
