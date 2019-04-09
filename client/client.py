@@ -55,8 +55,9 @@ class Client:
                 goal_level.append(line)
                 line = server_args.readline().rstrip()
 
-        except Exception:
-            msg_error("THERE WAS AN EXCEPTION LOL")
+        except:
+            msg = "{}\n{}: {}".format("THERE WAS AN EXCEPTION LOL:", sys.exc_info()[0], sys.exc_info()[1])
+            msg_error(msg)
             sys.exit()
 
         #create initial and goal state
