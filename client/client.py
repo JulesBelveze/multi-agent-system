@@ -117,21 +117,27 @@ class Client:
 
 
 def main(args):
-    msg_server("Starfish")
+    level_data = None
 
-    # Read server messages from stdin.
-    server_messages = sys.stdin
-
-     #Testing
     if args.debug == True:
-        levelname = "MAExample" 
-        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
-        print("Level name:", levelname)
-        server_messages = smt.sim_load_lvl(levelname)
+        level_name = "MAExample" 
+        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
+        print("Loading level:", level_name)
+
+        level_data = smt.sim_load_lvl(level_name)
+        if level_data is None: 
+            print("Failed to load level. Quitting...")
+            return
+        
         print("Level loaded successfully!")
+        smt.dump_to_file(level_data)
+    else:
+        # Read server messages from stdin.
+        msg_server("Starfish")
+        level_data = sys.stdin
     
     # Create client using server messages
-    starfish_client = Client(server_messages)
+    starfish_client = Client(level_data)
 
     # Solve and print
     solution = starfish_client.solve_level()
@@ -141,17 +147,16 @@ def main(args):
     else:
         msg_error("Found solution with {} steps.".format(len(solution)))
 
-        # printing solution
-        for steps in solution:
-            for state in steps:
-                msg_error("{}".format(state.action))
-
+    # printing solution
+    for steps in solution:
+        for state in steps:
+            msg_error("{}".format(state.action))
 
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
     parser.add_argument('--debug', type=bool, default=False, help='Setting to true will allow to run client without server')
-    
+
     args = parser.parse_args()
 
     # Run client
