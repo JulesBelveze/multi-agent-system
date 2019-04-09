@@ -6,7 +6,7 @@ def sim_load_lvl(client_level):
 		url = "../levels/" + client_level 
 	else:
 		url = "../levels/" + client_level + ".lvl"
-		content = open(url, 'r', encoding='utf8')
+	content = open(url, 'r', encoding='utf8')
 	return content
 
 
