@@ -1,9 +1,15 @@
-import sys
-import fileinput
-import numpy as np
 from argparse import ArgumentParser
+import fileinput
+import io
+import numpy as np
+import sys
+import smt
 
+from agent import Agent
 from state import State
+
+#Debugging = True 
+debug = True
 
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
@@ -104,7 +110,11 @@ class Client:
 
     def solve_level(self, strategy):
         msg_error("Solving level...")
-        strategy.add_to_frontier(self.initial_state)
+
+        # creating agents objects
+        agents_lists = {}
+        for agent_key in self.initial_state.agents.keys():
+            agents_lists[agent_key] = Agent(self.initial_state, agent_key)
 
         iterations = 0
         while True:
@@ -132,6 +142,15 @@ def main(args):
 
     # Read server messages from stdin.
     server_messages = sys.stdin
+
+     #Testing
+    if debug == True:
+        levelname = "MAExample" 
+        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
+        print("Level name:", levelname)
+        server_messages = smt.sim_load_lvl(levelname)
+        print("Level loaded successfully!")
+
 
     # Create client using server messages
     starfish_client = Client(server_messages)
