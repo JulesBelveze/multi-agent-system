@@ -108,6 +108,3 @@ venv.bak/
 
 #DS_Store
 .DS_Store
-
-#output text files
-*.txt
