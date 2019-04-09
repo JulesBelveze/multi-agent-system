@@ -98,33 +98,25 @@ class Client:
                     msg_error("Error: unexepected character in goal state.")
                     sys.exit(1)
 
-    def solve_level(self, strategy):
-        msg_error("Solving level...")
+    def solve_level(self):
+        # Create agents
+        self.agents = []
+        for char in self.initial_state.agents.keys():
+            self.agents.append(Agent(self.initial_state, char))
 
-        # creating agents objects
-        agents_lists = {}
-        for agent_key in self.initial_state.agents.keys():
-            agents_lists[agent_key] = Agent(self.initial_state, agent_key)
+        # Assign goal to agents
+        '''#todo: this part needs extensive overhaul to account for several agents'''
 
-        iterations = 0
-        while True:
-            if iterations == 1000:
-                msg_error(strategy.search_status())
-                iterations = 0
+        solutions = []
+        for char in self.goal_state.boxes.keys():
+            self.agents[0].assign_goal(self.initial_state, char)
 
-            if strategy.frontier_empty():
+            result = self.agents[0].find_path_to_goal(self.walls, self.goal_state)
+            if result is None:
                 return None
+            solutions.append(result)
 
-            leaf = strategy.get_and_remove_leaf()
-            if leaf.is_goal_state(self.goal_level):
-                return leaf.extract_plan()
-
-            strategy.add_to_explored(leaf)
-            for child_state in leaf.get_children(self.walls):
-                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
-                    strategy.add_to_frontier(child_state)
-
-            iterations += 1
+        return solutions
 
 
 def main(args):
@@ -134,7 +126,7 @@ def main(args):
     server_messages = sys.stdin
 
      #Testing
-    if debug == True:
+    if debug == False:
         levelname = "MAExample" 
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
         print("Level name:", levelname)
@@ -145,21 +137,18 @@ def main(args):
     # Create client using server messages
     starfish_client = Client(server_messages)
 
-    strategy = None
-
     # Solve and print
-    solution = starfish_client.solve_level(strategy)
+    solution = starfish_client.solve_level()
     if solution is None:
-        msg_error("{}".format(strategy.search_status()))
         msg_error("Unable to solve level.")
 
     else:
-        msg_error("Found solution of length {}.".format(len(solution)))
-        msg_error("{}".format(strategy.search_status()))
+        msg_error("Found solution with {} steps.".format(len(solution)))
 
         # printing solution
-        for state in solution:
-            msg_error("{}".format(state.action))
+        for steps in solution:
+            for state in steps:
+                msg_error("{}".format(state.action))
 
 
 if __name__ == "__main__":
