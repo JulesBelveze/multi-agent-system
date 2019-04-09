@@ -1,11 +1,12 @@
-import sys
-import fileinput
-#from agent import Agent
-from state import State
-import numpy as np
 from argparse import ArgumentParser
+import fileinput
 import io
+import numpy as np
+import sys
 import smt
+
+from agent import Agent
+from state import State
 
 #Debugging = True 
 debug = True
@@ -60,7 +61,16 @@ class Client:
         except Exception:
             sys.exit()
 
-        self.initial_state = State()  # TO BE CREATED
+        # Find agents and subgoals
+        '''#todo'''
+
+        #create initial and goal state
+        self.initial_state = State()
+        self.goal_state = State()
+
+        # update values of initial and goal states (boxes, agents)
+        '''#todo'''
+
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
         self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
 
@@ -104,7 +114,7 @@ class Client:
         # creating agents objects
         agents_lists = {}
         for agent_key in self.initial_state.agents.keys():
-            agents_lists[agent_key] = Agent(self.initial_state, self.goal_level, agent_key)
+            agents_lists[agent_key] = Agent(self.initial_state, agent_key)
 
         iterations = 0
         while True:
