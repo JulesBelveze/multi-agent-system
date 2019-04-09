@@ -61,28 +61,18 @@ class Client:
         except Exception:
             sys.exit()
 
-        # Find agents and subgoals
-        '''#todo'''
-
         #create initial and goal state
         self.initial_state = State()
         self.goal_state = State()
 
-        # update values of initial and goal states (boxes, agents)
-        '''#todo'''
-
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
-        self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
 
-        # looping through the level
+        # looping through the initial level
         for row, line in enumerate(level):
             for col, char in enumerate(row):
                 # looking for walls
                 if char == "+":
                     self.walls[row][col] = True
-                # looking for goal cells
-                elif char in "abcdefghijklmnopqrstuvwxyz":
-                    self.goals[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.initial_state.boxes[char] = (row, col, color_dict[char])
@@ -97,11 +87,11 @@ class Client:
                     sys.exit(1)
 
         # looping through the goal level
-        self.goal_level = {}  # goal level is a dictionary containing boxes informations
         for row, line in enumerate(goal_level):
             for col, char in enumerate(row):
+                # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_level[char] = (row, col, color_dict[char])
+                    self.goal_state.boxes[char] = (row, col, color_dict[char])
                 elif char == "+" or char == " ":
                     continue
                 else:
