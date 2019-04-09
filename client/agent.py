@@ -11,7 +11,7 @@ class Agent:
     def assign_goal(self, goal_state: 'State', box_key: 'str'):
         self.goal_state = goal_state
         self.box_key = box_key
-        self.path_finder.set_path_objective(self.current_state, goal_state, box_key)
+        self.path_finder.set_path_objective(goal_state, box_key, self.agent_key)
 
     def has_goal(self):
         if self.goal_state is None or self.box_key is None:
@@ -23,7 +23,7 @@ class Agent:
         self.path_finder.add_to_frontier(self.current_state)
 
         iterations = 0   #todo: this is a temp hack
-        while iterations < 5000:
+        while iterations < 15000:
             if self.path_finder.frontier_count() == 0:
                 return None
             
