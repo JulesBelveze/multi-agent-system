@@ -22,8 +22,8 @@ class Client:
             line = server_args.readline().rstrip()
             # catching level colors meta-data that are wrapped between #colors and #initial lines
             while line != "#colors":
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             color_dict = {}
             while line != "#inital":
@@ -32,8 +32,8 @@ class Client:
                 goal = line.split(":")[1].split(",")[1].strip()
                 color_dict[agent] = color
                 color_dict[goal] = color
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             level = []
             row, max_col = 0, 0
@@ -44,8 +44,8 @@ class Client:
 
                 level.append(line)
                 row += 1
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             self.max_row = row + 1
             self.max_col = max_col + 1
@@ -53,9 +53,10 @@ class Client:
             goal_level = []
             while line != "#end":
                 goal_level.append(line)
-                line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
 
         except Exception:
+            msg_error("THERE WAS AN EXCEPTION LOL")
             sys.exit()
 
         #create initial and goal state
@@ -96,6 +97,7 @@ class Client:
                     sys.exit(1)
 
     def solve_level(self):
+        return None
         # Create agents
         self.agents = []
         for char in self.initial_state.agents.keys():
@@ -130,7 +132,6 @@ def main(args):
             return
         
         print("Level loaded successfully!")
-        smt.dump_to_file(level_data)
     else:
         # Read server messages from stdin.
         msg_server("Starfish")
