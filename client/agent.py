@@ -3,7 +3,7 @@ from pathing import PathingBestFirst
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
-        self.initial_state = initial_state
+        self.current_state = initial_state
         self.goal_state = None
         self.box_key = None
         self.path_finder = PathingBestFirst()
@@ -11,7 +11,7 @@ class Agent:
     def assign_goal(self, goal_state: 'State', box_key: 'str'):
         self.goal_state = goal_state
         self.box_key = box_key
-        # Assign goal to pathing
+        self.path_finder.set_path_objective(self.current_state, goal_state, box_key)
 
     def has_goal(self):
         if self.goal_state is None or self.box_key is None:
@@ -19,9 +19,10 @@ class Agent:
         return True
 
     def find_path_to_goal(self, walls, goal_state):
-        self.path_finder.add_to_frontier(self.initial_state)
+        # Start with initial state
+        self.path_finder.add_to_frontier(self.current_state)
 
-        iterations = 0   #todo: this is a temp hack and will go away
+        iterations = 0   #todo: this is a temp hack
         while iterations < 5000:
             if self.path_finder.frontier_count() == 0:
                 return None
