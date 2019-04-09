@@ -8,9 +8,6 @@ import smt
 from agent import Agent
 from state import State
 
-#Debugging = True 
-debug = True
-
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
 
@@ -126,14 +123,13 @@ def main(args):
     server_messages = sys.stdin
 
      #Testing
-    if debug == False:
+    if args.debug == True:
         levelname = "MAExample" 
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
         print("Level name:", levelname)
         server_messages = smt.sim_load_lvl(levelname)
         print("Level loaded successfully!")
-
-
+    
     # Create client using server messages
     starfish_client = Client(server_messages)
 
@@ -154,7 +150,8 @@ def main(args):
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-
+    parser.add_argument('--debug', type=bool, default=False, help='Setting to true will allow to run client without server')
+    
     args = parser.parse_args()
 
     # Run client
