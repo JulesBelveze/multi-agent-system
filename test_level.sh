@@ -1,0 +1,1 @@
+java -jar server.jar -l levels/MAExample.lvl -c "python client/client.py" -g 150 -t 300
