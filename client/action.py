@@ -1,9 +1,7 @@
-class Direction:
-    N = E = S = W = None
-    '''
-    Do not instantiate outside this file
-    '''
-    def __init__(self, name: 'str', d_row: 'int', d_col: 'int'):
+class Dir:
+    N = S = E = W = None
+
+    def __init__(self, name, d_row, d_col):
         self.name = name
         self.d_row = d_row
         self.d_col = d_col
@@ -11,52 +9,54 @@ class Direction:
     def __repr__(self):
         return self.name
 
-Direction.N = Direction('N', -1, 0)
-Direction.E = Direction('E', 0, 1)
-Direction.S = Direction('S', 1, 0)
-Direction.W = Direction('W', 0, -1)
+
+Dir.N = Dir('N', -1, 0)
+Dir.S = Dir('S', 1, 0)
+Dir.E = Dir('E', 0, 1)
+Dir.W = Dir('W', 0, -1)
+
 
 class ActionType:
-    Move = Push = Pull = None
-    '''
-    Do not instantiate outside this file
-    '''
-    def __init__(self, name: 'str'):
+    Move = Push = Pull = Wait = None
+
+    def __init__(self, name):
         self.name = name
 
     def __repr__(self):
         return self.name
 
-ActionType.Move = ActionType("Move")
-ActionType.Push = ActionType("Push")
-ActionType.Pull = ActionType("Pull")
-ActionType.Wait = ActionType("Wait")
+
+ActionType.Move = ActionType('Move')
+ActionType.Push = ActionType('Push')
+ActionType.Pull = ActionType('Pull')
+ActionType.Wait = ActionType('Wait')
+
 
 class Action:
-    '''
-    Do not instantiate outside this file
-    '''
-    def __init__(self, action_type: 'ActionType', agent_dir: 'Direction', box_dir: 'Direction'):
+    def __init__(self, action_type, agent_dir, box_dir):
         self.action_type = action_type
         self.agent_dir = agent_dir
         self.box_dir = box_dir
-        self._repr = '[{} ({},{})]'.format(self.action_type, self.agent_dir, self.box_dir)
+
+        if box_dir is not None:
+            self._repr = '[{}({},{})]'.format(action_type, agent_dir, box_dir)
+        elif action_type == 'Wait':
+            self._repr = '[Wait]'
+        else:
+            self._repr = '[{}({})]'.format(action_type, agent_dir)
 
     def __repr__(self):
         return self._repr
 
-# All possible actions
+
 ALL_ACTIONS = []
-
-# Populate
-ALL_ACTIONS.append(Action(ActionType.Wait, None, None))
-for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
+for agent_dir in (Dir.N, Dir.S, Dir.E, Dir.W):
     ALL_ACTIONS.append(Action(ActionType.Move, agent_dir, None))
-
-    for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
+    # ALL_ACTIONS.append(Action(ActionType.Wait))
+    for box_dir in (Dir.N, Dir.S, Dir.E, Dir.W):
         if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
-            # If not opposite directions
+            # If not opposite directions.
             ALL_ACTIONS.append(Action(ActionType.Push, agent_dir, box_dir))
         if agent_dir is not box_dir:
-            # If not same directions
+            # If not same directions.
             ALL_ACTIONS.append(Action(ActionType.Pull, agent_dir, box_dir))

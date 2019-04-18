@@ -1,12 +1,11 @@
-from argparse import ArgumentParser
-import fileinput
-import io
-import numpy as np
 import sys
-import smt
-
-from agent import Agent
+import fileinput
+#from agent import Agent
 from state import State
+import numpy as np
+from argparse import ArgumentParser
+import io
+import smt
 
 #Debugging = True 
 debug = True
@@ -61,18 +60,19 @@ class Client:
         except Exception:
             sys.exit()
 
-        #create initial and goal state
-        self.initial_state = State()
-        self.goal_state = State()
-
+        self.initial_state = State()  # TO BE CREATED
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
+        self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
 
-        # looping through the initial level
+        # looping through the level
         for row, line in enumerate(level):
             for col, char in enumerate(row):
                 # looking for walls
                 if char == "+":
                     self.walls[row][col] = True
+                # looking for goal cells
+                elif char in "abcdefghijklmnopqrstuvwxyz":
+                    self.goals[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.initial_state.boxes[char] = (row, col, color_dict[char])
@@ -87,11 +87,11 @@ class Client:
                     sys.exit(1)
 
         # looping through the goal level
+        self.goal_level = {}  # goal level is a dictionary containing boxes informations
         for row, line in enumerate(goal_level):
             for col, char in enumerate(row):
-                # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_state.boxes[char] = (row, col, color_dict[char])
+                    self.goal_level[char] = (row, col, color_dict[char])
                 elif char == "+" or char == " ":
                     continue
                 else:
@@ -104,7 +104,7 @@ class Client:
         # creating agents objects
         agents_lists = {}
         for agent_key in self.initial_state.agents.keys():
-            agents_lists[agent_key] = Agent(self.initial_state, agent_key)
+            agents_lists[agent_key] = Agent(self.initial_state, self.goal_level, agent_key)
 
         iterations = 0
         while True:
