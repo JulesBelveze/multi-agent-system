@@ -26,7 +26,7 @@ class Client:
             line = server_args.readline().rstrip()
 
             color_dict = {}
-            while line != "#inital":
+            while line != "#initial":
                 color = line.split(":")[0]
                 agent = line.split(":")[1].split(",")[0].strip()
                 goal = line.split(":")[1].split(",")[1].strip()
@@ -67,6 +67,8 @@ class Client:
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
 
         # looping through the initial level
+        #TODO: this stuff dont work
+
         for row, line in enumerate(level):
             for col, char in enumerate(row):
                 # looking for walls
