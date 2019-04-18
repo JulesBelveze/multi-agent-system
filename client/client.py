@@ -1,14 +1,13 @@
-import sys
-import fileinput
-#from agent import Agent
-from state import State
-import numpy as np
 from argparse import ArgumentParser
+import fileinput
 import io
+import numpy as np
+import sys
 import smt
 
-#Debugging = True 
-debug = True
+from agent import Agent
+from state import State
+
 
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
@@ -24,18 +23,18 @@ class Client:
             line = server_args.readline().rstrip()
             # catching level colors meta-data that are wrapped between #colors and #initial lines
             while line != "#colors":
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             color_dict = {}
-            while line != "#inital":
+            while line != "#initial":
                 color = line.split(":")[0]
                 agent = line.split(":")[1].split(",")[0].strip()
                 goal = line.split(":")[1].split(",")[1].strip()
                 color_dict[agent] = color
                 color_dict[goal] = color
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             level = []
             row, max_col = 0, 0
@@ -46,8 +45,8 @@ class Client:
 
                 level.append(line)
                 row += 1
-                line = server_args.readline.rstrip()
-            line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
+            line = server_args.readline().rstrip()
 
             self.max_row = row + 1
             self.max_col = max_col + 1
@@ -55,24 +54,27 @@ class Client:
             goal_level = []
             while line != "#end":
                 goal_level.append(line)
-                line = server_args.readline.rstrip()
+                line = server_args.readline().rstrip()
 
-        except Exception:
+        except:
+            msg = "{}\n{}: {}".format("THERE WAS AN EXCEPTION LOL:", sys.exc_info()[0], sys.exc_info()[1])
+            msg_error(msg)
             sys.exit()
 
-        self.initial_state = State()  # TO BE CREATED
-        self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
-        self.goals = np.zeros((self.max_row, self.max_col), dtype=bool)
+        # create initial and goal state
+        self.initial_state = State()
+        self.goal_state = State()
 
-        # looping through the level
+        self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
+
+        # looping through the initial level
+        # TODO: this stuff dont work
+
         for row, line in enumerate(level):
             for col, char in enumerate(row):
                 # looking for walls
                 if char == "+":
                     self.walls[row][col] = True
-                # looking for goal cells
-                elif char in "abcdefghijklmnopqrstuvwxyz":
-                    self.goals[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.initial_state.boxes[char] = (row, col, color_dict[char])
@@ -87,84 +89,80 @@ class Client:
                     sys.exit(1)
 
         # looping through the goal level
-        self.goal_level = {}  # goal level is a dictionary containing boxes informations
         for row, line in enumerate(goal_level):
             for col, char in enumerate(row):
+                # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_level[char] = (row, col, color_dict[char])
+                    self.goal_state.boxes[char] = (row, col, color_dict[char])
                 elif char == "+" or char == " ":
                     continue
                 else:
                     msg_error("Error: unexepected character in goal state.")
                     sys.exit(1)
 
-    def solve_level(self, strategy):
-        msg_error("Solving level...")
+    def solve_level(self):
+        return None
+        # Create agents
+        self.agents = []
+        for char in self.initial_state.agents.keys():
+            self.agents.append(Agent(self.initial_state, char))
 
-        # creating agents objects
-        agents_lists = {}
-        for agent_key in self.initial_state.agents.keys():
-            agents_lists[agent_key] = Agent(self.initial_state, self.goal_level, agent_key)
+        # Assign goal to agents
+        '''#todo: this part needs extensive overhaul to account for several agents'''
 
-        iterations = 0
-        while True:
-            if iterations == 1000:
-                msg_error(strategy.search_status())
-                iterations = 0
+        solutions = []
+        for char in self.goal_state.boxes.keys():
+            self.agents[0].assign_goal(self.initial_state, char)
 
-            if strategy.frontier_empty():
+            result = self.agents[0].find_path_to_goal(self.walls, self.goal_state)
+            if result is None:
                 return None
+            solutions.append(result)
 
-            leaf = strategy.get_and_remove_leaf()
-            if leaf.is_goal_state(self.goal_level):
-                return leaf.extract_plan()
-
-            strategy.add_to_explored(leaf)
-            for child_state in leaf.get_children(self.walls):
-                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
-                    strategy.add_to_frontier(child_state)
-
-            iterations += 1
+        return solutions
 
 
 def main(args):
-    msg_server("Starfish")
+    level_data = None
 
-    # Read server messages from stdin.
-    server_messages = sys.stdin
+    if args.debug == True:
+        level_name = "MAExample"
+        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
+        print("Loading level:", level_name)
 
-     #Testing
-    if debug == True:
-        levelname = "MAExample" 
-        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server\nLoading level through client...")
-        print("Level name:", levelname)
-        server_messages = smt.sim_load_lvl(levelname)
+        level_data = smt.sim_load_lvl(level_name)
+        if level_data is None:
+            print("Failed to load level. Quitting...")
+            return
+
         print("Level loaded successfully!")
-
+    else:
+        # Read server messages from stdin.
+        msg_server("Starfish")
+        level_data = sys.stdin
 
     # Create client using server messages
-    starfish_client = Client(server_messages)
-
-    strategy = None
+    starfish_client = Client(level_data)
 
     # Solve and print
-    solution = starfish_client.solve_level(strategy)
+    solution = starfish_client.solve_level()
     if solution is None:
-        msg_error("{}".format(strategy.search_status()))
         msg_error("Unable to solve level.")
 
     else:
-        msg_error("Found solution of length {}.".format(len(solution)))
-        msg_error("{}".format(strategy.search_status()))
+        msg_error("Found solution with {} steps.".format(len(solution)))
 
-        # printing solution
-        for state in solution:
+    # printing solution
+    for steps in solution:
+        for state in steps:
             msg_error("{}".format(state.action))
 
 
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
+    parser.add_argument('--debug', type=bool, default=False,
+                        help='Setting to true will allow to run client without server')
 
     args = parser.parse_args()
 
