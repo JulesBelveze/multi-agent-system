@@ -47,8 +47,8 @@ class Client:
                 line = server_args.readline().rstrip()
             line = server_args.readline().rstrip()
 
-            self.max_row = row + 1
-            self.max_col = max_col + 1
+            self.max_row = row
+            self.max_col = max_col
 
             goal_level = []
             while line != "#end":
@@ -67,10 +67,8 @@ class Client:
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
 
         # looping through the initial level
-        #TODO: this stuff dont work
-        
         for row, line in enumerate(level):
-            for col, char in enumerate(row):
+            for col, char in enumerate(line):
                 # looking for walls
                 if char == "+":
                     self.walls[row][col] = True
@@ -80,24 +78,19 @@ class Client:
                 # looking for agents
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
-                # looking for empty cell
-                elif char == " ":
-                    continue
-                else:
-                    msg_error("Error: unexpected character.")
+                elif char not in " ":
+                    msg_error("Error parsing initial level: unexpected character.")
                     sys.exit(1)
 
         # looping through the goal level
         for row, line in enumerate(goal_level):
-            for col, char in enumerate(row):
+            for col, char in enumerate(line):
                 # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.goal_state.boxes[char] = (row, col, color_dict[char])
-                elif char == "+" or char == " ":
-                    continue
-                else:
-                    msg_error("Error: unexepected character in goal state.")
-                    sys.exit(1)
+                elif char not in "+ ":
+                    msg_error("Error parsing goal level: unexepected character.")
+                    sys.exit(1)      
 
     def solve_level(self):
         return None
@@ -107,7 +100,7 @@ class Client:
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
-        '''#todo: this part needs extensive overhaul to account for several agents'''
+        #TODO: this part needs extensive overhaul to account for several agents
 
         solutions = []
         for char in self.goal_state.boxes.keys():
@@ -147,14 +140,13 @@ def main(args):
     solution = starfish_client.solve_level()
     if solution is None:
         msg_error("Unable to solve level.")
-
     else:
         msg_error("Found solution with {} steps.".format(len(solution)))
 
-    # printing solution
-    for steps in solution:
-        for state in steps:
-            msg_error("{}".format(state.action))
+        # printing solution
+        for steps in solution:
+            for state in steps:
+                msg_error("{}".format(state.action))
 
 if __name__ == "__main__":
     # Process arguments
