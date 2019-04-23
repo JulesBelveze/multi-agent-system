@@ -8,7 +8,6 @@ import smt
 from agent import Agent
 from state import State
 
-
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
 
@@ -27,7 +26,7 @@ class Client:
             line = server_args.readline().rstrip()
 
             color_dict = {}
-            while line != "#initial":
+            while line != "#inital":
                 color = line.split(":")[0]
                 agent = line.split(":")[1].split(",")[0].strip()
                 goal = line.split(":")[1].split(",")[1].strip()
@@ -61,15 +60,13 @@ class Client:
             msg_error(msg)
             sys.exit()
 
-        # create initial and goal state
+        #create initial and goal state
         self.initial_state = State()
         self.goal_state = State()
 
         self.walls = np.zeros((self.max_row, self.max_col), dtype=bool)
 
         # looping through the initial level
-        # TODO: this stuff dont work
-
         for row, line in enumerate(level):
             for col, char in enumerate(row):
                 # looking for walls
@@ -126,21 +123,21 @@ def main(args):
     level_data = None
 
     if args.debug == True:
-        level_name = "MAExample"
+        level_name = "MAExample" 
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
         print("Loading level:", level_name)
 
         level_data = smt.sim_load_lvl(level_name)
-        if level_data is None:
+        if level_data is None: 
             print("Failed to load level. Quitting...")
             return
-
+        
         print("Level loaded successfully!")
     else:
         # Read server messages from stdin.
         msg_server("Starfish")
         level_data = sys.stdin
-
+    
     # Create client using server messages
     starfish_client = Client(level_data)
 
@@ -157,12 +154,10 @@ def main(args):
         for state in steps:
             msg_error("{}".format(state.action))
 
-
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-    parser.add_argument('--debug', type=bool, default=False,
-                        help='Setting to true will allow to run client without server')
+    parser.add_argument('--debug', type=bool, default=False, help='Setting to true will allow to run client without server')
 
     args = parser.parse_args()
 
