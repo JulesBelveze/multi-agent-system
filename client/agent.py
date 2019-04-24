@@ -33,7 +33,8 @@ class Agent:
                 return current.extract_plan()
             
             self.path_finder.add_to_explored(current)
-            for child_state in current.get_children(walls):
+            for child_state in current.get_children(walls, self.agent_key, self.box_key):
                 if not self.path_finder.is_explored(child_state) and not self.path_finder.in_frontier(child_state):
                     self.path_finder.add_to_frontier(child_state)
+            iterations += 1
         return None

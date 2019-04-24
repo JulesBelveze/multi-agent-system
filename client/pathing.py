@@ -9,7 +9,7 @@ class Heuristic:
 
     '''Moving boxes, uses manhattan distance between goal and current box'''
     def h_box_distance(self, state: 'State') -> 'int':
-        goal_box = self.goal_state.get(self.box_key)
+        goal_box = self.goal_state.boxes.get(self.box_key)
         current_box = state.boxes.get(self.box_key)
 
         #Manhattan distance

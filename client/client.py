@@ -93,7 +93,6 @@ class Client:
                     sys.exit(1)      
 
     def solve_level(self):
-        return None
         # Create agents
         self.agents = []
         for char in self.initial_state.agents.keys():
@@ -104,7 +103,7 @@ class Client:
 
         solutions = []
         for char in self.goal_state.boxes.keys():
-            self.agents[0].assign_goal(self.initial_state, char)
+            self.agents[0].assign_goal(self.goal_state, char)
 
             result = self.agents[0].find_path_to_goal(self.walls, self.goal_state)
             if result is None:
