@@ -18,7 +18,7 @@ class Agent:
             return False
         return True
 
-    def find_path_to_goal(self, walls, goal_state):
+    def find_path_to_goal(self, walls):
         # Start with initial state
         self.path_finder.add_to_frontier(self.current_state)
 

@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from action import ActionType
 import heapq
 
 class Heuristic:
@@ -6,6 +7,16 @@ class Heuristic:
         self.goal_state = goal_state
         self.box_key = box_key
         self.agent_key = agent_key
+
+    def h_get(self, walls, state: 'State') -> 'int':
+        agent = state.agents.get(self.agent_key)
+        # check if in a corridor
+        if walls[agent[0] - 1][agent[1]] == True and walls[agent[0] + 1][agent[1]] == True:
+            return self.h_tunnel(state)
+        elif walls[agent[0]][agent[1] - 1] == True and walls[agent[0]][agent[1] + 1] == True:
+            return self.h_tunnel(state)
+
+        return self.h_box_distance(state)
 
     '''Moving boxes, uses manhattan distance between goal and current box'''
     def h_box_distance(self, state: 'State') -> 'int':
@@ -18,12 +29,13 @@ class Heuristic:
     '''Moving agents, uses manhattan distance between goal and current agent'''
     def h_agent_distance(self, state: 'State') -> 'int':
         current_agent = state.agents.get(self.agent_key)
-        goal_agent = self.goal_state.agents.get(self.agent_key)
+        goal_agent = self.goal_state.boxes.get(self.box_key)
 
         return abs(goal_agent[0] - current_agent[0]) + abs(goal_agent[1] - current_agent[1])
 
     '''Potential heuristic for moving through 1 wide corridors'''
     def h_tunnel(self, state: 'State') -> 'int':
+        
         return 0
 
 
@@ -56,6 +68,7 @@ class Pathing(metaclass=ABCMeta):
 class PathingBestFirst(Pathing):
     def __init__(self):
         super().__init__()
+        self.unique_increment = 0
         self.frontier = []
         self.frontier_set = set()
         self.heuristic = None
@@ -65,13 +78,17 @@ class PathingBestFirst(Pathing):
         self.heuristic = Heuristic(goal_state, box_key, agent_key)
 
     def get_from_frontier(self):
-        leaf = heapq.heappop(self.frontier)[1]
+        leaf = heapq.heappop(self.frontier)[2]
         self.frontier_set.remove(leaf)
         return leaf
 
-    def add_to_frontier(self, state):
-        heapq.heappush(self.frontier, (self.heuristic.h_box_distance(state), state))
+    def add_to_frontier(self, state):  
+        modifier = 1
+        if state.action is not None and state.action.action_type is ActionType.Wait:
+            modifier *= 2
+        heapq.heappush(self.frontier, (self.heuristic.h_box_distance(state) * modifier, self.unique_increment, state))
         self.frontier_set.add(state)
+        self.unique_increment += 1
 
     def in_frontier(self, state):
         return state in self.frontier
