@@ -140,12 +140,12 @@ def main(args):
     if solution is None:
         msg_error("Unable to solve level.")
     else:
-        msg_error("Found solution with {} steps.".format(len(solution)))
+        msg_error("Found {} solution(s).".format(len(solution)))
 
         # printing solution
         for steps in solution:
             for state in steps:
-                msg_error("{}".format(state.action))
+                msg_server("{}".format(state.action))
 
 if __name__ == "__main__":
     # Process arguments
