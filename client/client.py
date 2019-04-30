@@ -105,7 +105,7 @@ class Client:
         for char in self.goal_state.boxes.keys():
             self.agents[0].assign_goal(self.goal_state, char)
 
-            result = self.agents[0].find_path_to_goal(self.walls, self.goal_state)
+            result = self.agents[0].find_path_to_goal(self.walls)
             if result is None:
                 return None
             solutions.append(result)
@@ -117,7 +117,7 @@ def main(args):
     level_data = None
 
     if args.debug == True:
-        level_name = "MAExample" 
+        level_name = "MA_example" 
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
         print("Loading level:", level_name)
 
