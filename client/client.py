@@ -1,12 +1,12 @@
+from __future__ import print_function
 from argparse import ArgumentParser
-import fileinput
-import io
 import numpy as np
 import sys
 import smt
 
 from agent import Agent
 from state import State
+
 
 def msg_server(message):
     print(message, file=sys.stdout, flush=True)
@@ -60,7 +60,7 @@ class Client:
             msg_error(msg)
             sys.exit()
 
-        #create initial and goal state
+        # create initial and goal state
         self.initial_state = State()
         self.goal_state = State()
 
@@ -90,7 +90,7 @@ class Client:
                     self.goal_state.boxes[char] = (row, col, color_dict[char])
                 elif char not in "+ ":
                     msg_error("Error parsing goal level: unexepected character.")
-                    sys.exit(1)      
+                    sys.exit(1)
 
     def solve_level(self):
         # Create agents
@@ -99,7 +99,7 @@ class Client:
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
-        #TODO: this part needs extensive overhaul to account for several agents
+        # TODO: this part needs extensive overhaul to account for several agents
 
         solutions = []
         for char in self.goal_state.boxes.keys():
@@ -122,16 +122,16 @@ def main(args):
         print("Loading level:", level_name)
 
         level_data = smt.sim_load_lvl(level_name)
-        if level_data is None: 
+        if level_data is None:
             print("Failed to load level. Quitting...")
             return
-        
+
         print("Level loaded successfully!")
     else:
         # Read server messages from stdin.
         msg_server("Starfish")
         level_data = sys.stdin
-    
+
     # Create client using server messages
     starfish_client = Client(level_data)
 
@@ -147,11 +147,14 @@ def main(args):
             for state in steps:
                 msg_server("{}".format(state.action))
 
+
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-    parser.add_argument('--debug', type=bool, default=False, help='Setting to true will allow to run client without server')
-    parser.add_argument('--levelName', default='MA_example', help='Provide the name of a level for client to run (requires debug arg)')
+    parser.add_argument('--debug', type=bool, default=False,
+                        help='Setting to true will allow to run client without server')
+    parser.add_argument('--levelName', default='MA_example',
+                        help='Provide the name of a level for client to run (requires debug arg)')
 
     args = parser.parse_args()
 

@@ -40,7 +40,10 @@ class Action:
         self.action_type = action_type
         self.agent_dir = agent_dir
         self.box_dir = box_dir
-        self._repr = '[{} ({},{})]'.format(self.action_type, self.agent_dir, self.box_dir)
+        if self.action_type == ActionType.Move:
+            self._repr = '{}({})'.format(self.action_type, self.agent_dir)
+        else:
+            self._repr = '{}({},{})'.format(self.action_type, self.agent_dir, self.box_dir)
 
     def __repr__(self):
         return self._repr
