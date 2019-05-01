@@ -7,14 +7,9 @@ import smt
 from agent import Agent
 from state import State
 
-
-def msg_server(message):
-    print(message, file=sys.stdout, flush=True)
-
-
-def msg_error(message):
-    print(message, file=sys.stderr, flush=True)
-
+from message import msg_server_err
+from message import msg_server_comment
+from message import msg_server_action
 
 class Client:
     def __init__(self, server_args):
@@ -57,7 +52,7 @@ class Client:
 
         except:
             msg = "{}\n{}: {}".format("THERE WAS AN EXCEPTION LOL:", sys.exc_info()[0], sys.exc_info()[1])
-            msg_error(msg)
+            msg_server_err(msg)
             sys.exit()
 
         # create initial and goal state
@@ -79,7 +74,7 @@ class Client:
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
                 elif char not in " ":
-                    msg_error("Error parsing initial level: unexpected character.")
+                    msg_server_err("Error parsing initial level: unexpected character.")
                     sys.exit(1)
 
         # looping through the goal level
@@ -89,7 +84,7 @@ class Client:
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.goal_state.boxes[char] = (row, col, color_dict[char])
                 elif char not in "+ ":
-                    msg_error("Error parsing goal level: unexepected character.")
+                    msg_server_err("Error parsing goal level: unexepected character.")
                     sys.exit(1)
 
     def solve_level(self):
@@ -129,7 +124,7 @@ def main(args):
         print("Level loaded successfully!")
     else:
         # Read server messages from stdin.
-        msg_server("Starfish")
+        msg_server_action("Starfish")
         level_data = sys.stdin
 
     # Create client using server messages
@@ -138,14 +133,14 @@ def main(args):
     # Solve and print
     solution = starfish_client.solve_level()
     if solution is None:
-        msg_error("Unable to solve level.")
+        msg_server_err("Unable to solve level.")
     else:
-        msg_error("Found {} solution(s).".format(len(solution)))
+        msg_server_comment("Found {} solution(s)".format(len(solution)))
 
         # printing solution
         for steps in solution:
             for state in steps:
-                msg_server("{}".format(state.action))
+                msg_server_action("{}".format(state.action))
 
 
 if __name__ == "__main__":
