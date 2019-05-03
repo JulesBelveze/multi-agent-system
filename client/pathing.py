@@ -2,13 +2,8 @@ import numpy as np
 import heapq
 import copy
 
-class Pathing():
+class Path():
     def __init__(self):
-        self.closed = set()
-        self.open = set()
-        self.frontier = []
-        heapq.heapify(self.frontier)
-
         self.val_grid = []
         self.level_grid = []
 
@@ -22,8 +17,8 @@ class Pathing():
         for key, box in state.boxes.items():
             self.level_grid[box[0]][box[1]] = True
 
-        for key, ag in state.agents.items():
-            self.level_grid[ag[0]][ag[1]] = True
+        for key, agent in state.agents.items():
+            self.level_grid[agent[0]][agent[1]] = True
 
         # Setup value grid
         self.val_grid = np.arange(lvl_rows * lvl_cols).reshape(lvl_rows, lvl_cols)
@@ -35,6 +30,11 @@ class Pathing():
 
         # Map cells
         self.calc_cells(end_index[0], end_index[1], start_index)
+
+        if self.is_path_found(start_index):
+            return self.val_grid
+
+        return None
 
     def calc_cells(self, v_index, h_index, start_index):
         u = v_index - 1
@@ -76,10 +76,58 @@ class Pathing():
             if vl == True:
                 self.calc_cells(v_index, l, start_index)
                 vl = False
-    
+
+    def is_path_found(self, start_index):
+        # Check neighbouring cells for values greater than 0, which means path was found
+        if self.val_grid[start_index[0] - 1][start_index[1]] != 0:
+            return True
+        elif self.val_grid[start_index[0] + 1][start_index[1]] != 0:
+            return True
+        elif self.val_grid[start_index[0]][start_index[1] - 1] != 0:
+            return True
+        elif self.val_grid[start_index[0]][start_index[1] + 1] != 0:
+            return True
+
+        return False
+
     def print_path(self):
         print(self.val_grid)
 
+class Navigate:
+    def __init__(self):
+        self.unique_count = 0
+        self.open = set()
+        self.closed = set()
+        self.frontier = []
+        heapq.heapify(self.frontier)
+
+    def add_to_explored(self, state):
+        self.closed.add(state)
+
+    def is_explored(self, state):
+        return state in self.closed
+
+    def explored_count(self):
+        return len(self.closed)
+
+    def add_to_frontier(self, state, heuristic):
+        heapq.heappush(self.frontier, (heuristic, self.unique_count, state))
+        self.open.add(state)
+        self.unique_count += 1
+    
+    def get_from_frontier(self):
+        leaf = heapq.heappop(self.frontier)[2]
+        self.open.remove(leaf)
+        return leaf
+
+    def in_frontier(self, state):
+        return state in self.open
+
+    def frontier_count(self):
+        return len(self.open)
+
+    def h_calculate(self, target_index, path):
+        return path[target_index[0]][target_index[1]] * -1
 
 # class PathingBestFirst(Pathing):
 #     def __init__(self):

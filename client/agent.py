@@ -1,10 +1,12 @@
-from pathing import Pathing
+from pathing import Path
+from pathing import Navigate
 
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
         self.current_state = initial_state
-        self.path_finder = Pathing()
+        self.path_finder = Path()
+        self.navigator = Navigate()
 
     def assign_goal(self, goal_state: 'State', box_key: 'str'):
         self.goal_state = goal_state
@@ -20,12 +22,46 @@ class Agent:
         agent = self.current_state.agents.get(self.agent_key)
         c_box = self.current_state.boxes.get(self.box_key)
         g_box = self.goal_state.boxes.get(self.box_key)
+        final_plan = []
 
-        self.path_finder.calc_route(walls, (agent[0], agent[1]), (g_box[0], g_box[1]), self.current_state)
-        self.path_finder.print_path()
+        # Find path to current box
+        path = self.path_finder.calc_route(walls, (agent[0], agent[1]), (c_box[0], c_box[1]), self.current_state)
+        if path is not None:
+            print("Found path from agent to box:")
+            print(path)
+
+            # Navigate
+            self.navigator.add_to_frontier(self.current_state, self.navigator.h_calculate(agent, path))
+            iterations = 0  #TODO: temp hack
+            while iterations < 16000:
+                if self.navigator.frontier_count() == 0:
+                    print("Failed to navigate agent to box!")
+                    return None
+
+                current = self.navigator.get_from_frontier()
+                agent = current.agents.get(self.agent_key)
+
+                # Is the agent next to the box that needs to be moved?
+                if abs(self.navigator.h_calculate(agent, path) - self.navigator.h_calculate(c_box, path)) == 1:
+                    final_plan.append(current.extract_plan())
+                    break
+
+                self.navigator.add_to_explored(current)
+                for child_state in current.get_children(walls, self.agent_key, self.box_key):
+                    if not self.navigator.is_explored(child_state) and not self.navigator.in_frontier(child_state):
+                        self.navigator.add_to_frontier(child_state, self.navigator.h_calculate(agent, path))
+  
+                iterations += 1
+
+            # Find path to goal box
+            self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
+            if self.path_finder.is_path_found((c_box[0], c_box[1])):
+                print("Found path from box to goal box:")
+                self.path_finder.print_path()
 
 
-        
+
+            return final_plan
         # # Start with initial state
         # self.path_finder.add_to_frontier(self.current_state)
 
