@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 import copy
+from message import msg_server_comment
 
 class Path():
     def __init__(self):
@@ -89,6 +90,11 @@ class Path():
             return True
 
         return False
+
+    def print_path(self):
+        # Printing to server console doesnt look very nice, it gets confused with new lines
+        # Only use this for debugging purposes
+        msg_server_comment(self.val_grid)
 
 class Navigate:
     def __init__(self):
