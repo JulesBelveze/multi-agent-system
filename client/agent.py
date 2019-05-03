@@ -62,7 +62,7 @@ class Agent:
             path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
             if self.path_finder.is_path_found((c_box[0], c_box[1])):
                 msg_server_comment("Found path from box to goal box:")
-                self.path_finder.print_path()
+                msg_server_comment(path)
 
                 # Start fresh navigation task
                 self.navigator = Navigate() # This line was so painful to type as a C++ guy
