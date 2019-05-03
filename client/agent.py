@@ -31,14 +31,14 @@ class Agent:
         # Find path to current box
         path = self.path_finder.calc_route(walls, (agent[0], agent[1]), (c_box[0], c_box[1]), self.current_state)
         if path is not None:
-            msg_server_comment("Found path from agent to box")
+            msg_server_comment("Found path from agent {} to box {}".format(self.agent_key, self.box_key))
 
             # Navigate
             self.navigator.add_to_frontier(self.current_state, self.navigator.h_calculate(agent, path))
             iterations = 0  #TODO: temp hack
             while iterations < 16000:
                 if self.navigator.frontier_count() == 0:
-                    msg_server_err("Failed to navigate agent to box!")
+                    msg_server_err("Failed to navigate agent {} to box {}!".format(self.agent_key, self.box_key))
                     return None
 
                 current = self.navigator.get_from_frontier()
@@ -48,6 +48,7 @@ class Agent:
                 if abs(self.navigator.h_calculate(agent, path) - self.navigator.h_calculate(c_box, path)) == 1:
                     final_plan = current.extract_plan()
                     self.current_state = current
+                    self.navigator = Navigate() # This line was so painful to type as a C++ guy
                     break
 
                 self.navigator.add_to_explored(current)
@@ -60,17 +61,14 @@ class Agent:
             # Find path to goal box
             path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
             if self.path_finder.is_path_found((c_box[0], c_box[1])):
-                msg_server_comment("Found path from box to goal box")
-
-                # Start fresh navigation task
-                self.navigator = Navigate() # This line was so painful to type as a C++ guy
+                msg_server_comment("Found path from box {} to goal box".format(self.box_key))
 
                 #TODO: fix code duplication
                 self.navigator.add_to_frontier(self.current_state, self.navigator.h_calculate(c_box, path))
                 iterations = 0  #TODO: temp hack
                 while iterations < 16000:
                     if self.navigator.frontier_count() == 0:
-                        msg_server_err("Failed to navigate box to goal!")
+                        msg_server_err("Failed to navigate box {} to goal!".format(self.box_key))
                         return None
 
                     current = self.navigator.get_from_frontier()
@@ -78,6 +76,8 @@ class Agent:
 
                     if self.navigator.h_calculate(c_box, path) - self.navigator.h_calculate(g_box, path) == 0:
                         final_plan = current.extract_plan()
+                        self.current_state = current
+                        self.navigator = Navigate() # Oh almighty garbage collector, forgive me for abandoning so much memory
                         break
 
                     self.navigator.add_to_explored(current)

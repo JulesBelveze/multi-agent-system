@@ -139,6 +139,7 @@ def main(args):
 
         # printing solution
         for steps in solution:
+            msg_server_comment("New solution:")
             for state in steps:
                 msg_server_action("{}".format(state.action))
 
