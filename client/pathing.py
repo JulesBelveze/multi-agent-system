@@ -90,9 +90,6 @@ class Path():
 
         return False
 
-    def print_path(self):
-        print(self.val_grid)
-
 class Navigate:
     def __init__(self):
         self.unique_count = 0
@@ -128,38 +125,3 @@ class Navigate:
 
     def h_calculate(self, target_index, path):
         return path[target_index[0]][target_index[1]] * -1
-
-# class PathingBestFirst(Pathing):
-#     def __init__(self):
-#         super().__init__()
-#         self.unique_increment = 0
-#         self.frontier = []
-#         self.frontier_set = set()
-#         self.heuristic = None
-#         heapq.heapify(self.frontier)
-
-#     def set_path_objective(self, goal_state: 'State', box_key: 'str', agent_key: 'str'):
-#         self.heuristic = Heuristic(goal_state, box_key, agent_key)
-
-#     def get_from_frontier(self):
-#         leaf = heapq.heappop(self.frontier)[2]
-#         self.frontier_set.remove(leaf)
-#         return leaf
-
-#     def add_to_frontier(self, state):  
-#         modifier = 1
-#         if state.action is not None and state.action.action_type is ActionType.Wait:
-#             modifier *= 2
-#         heapq.heappush(self.frontier, (self.heuristic.h_box_distance(state) * modifier, self.unique_increment, state))
-#         self.frontier_set.add(state)
-#         self.unique_increment += 1
-
-#     def in_frontier(self, state):
-#         return state in self.frontier
-
-#     def frontier_count(self):
-#         return len(self.frontier)
-
-    # Printing functions for debug purposes
-    #todo
-        
