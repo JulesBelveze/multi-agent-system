@@ -6,6 +6,7 @@ import smt
 
 from agent import Agent
 from state import State
+from action import ActionType
 
 from message import msg_server_err
 from message import msg_server_comment
@@ -146,15 +147,20 @@ def main(args):
     else:
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
-        solution = zip(solution[0], solution[1])
+        # adding NoOp action for agent that have already satisfied their goals
+        nb_agents = len(solution)
+        max_len_sol = max(len(x) for x in solution)
+        for i in range(nb_agents):
+            padding_state = State(solution[i][-1])
+            padding_state.action = ActionType.NoOp
+            solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+
+        solution = zip(*solution)
+        printer = ";".join(['{}'] * nb_agents)
         for state in solution:
-            msg_server_comment("{};{}".format(state[0].action, state[1].action))
-            msg_server_action("{};{}".format(state[0].action, state[1].action))
-        # printing solution
-        # for steps in solution:
-        #     msg_server_comment("New solution:")
-        #     for state in steps:
-        #         msg_server_action("{}".format(state.action))
+            action = [agent.action for agent in state]
+            msg_server_comment(printer.format(*action))
+            msg_server_action(printer.format(*action))
 
 
 if __name__ == "__main__":
