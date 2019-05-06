@@ -91,7 +91,10 @@ class Client:
     def solve_level(self):
         # Create agents
         self.agents = []
-        for char in self.initial_state.agents.keys():
+
+        # need to be sorted because of the format of the joint actions the
+        # server can read
+        for char in sorted(self.initial_state.agents.keys()):
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
@@ -143,11 +146,15 @@ def main(args):
     else:
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
+        solution = zip(solution[0], solution[1])
+        for state in solution:
+            msg_server_comment("{};{}".format(state[0].action, state[1].action))
+            msg_server_action("{};{}".format(state[0].action, state[1].action))
         # printing solution
-        for steps in solution:
-            msg_server_comment("New solution:")
-            for state in steps:
-                msg_server_action("{}".format(state.action))
+        # for steps in solution:
+        #     msg_server_comment("New solution:")
+        #     for state in steps:
+        #         msg_server_action("{}".format(state.action))
 
 
 if __name__ == "__main__":
