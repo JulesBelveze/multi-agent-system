@@ -97,17 +97,15 @@ class Client:
         # Create agents
         self.agents = []
 
-        # need to be sorted because of the format of the joint actions the
-        # server can read
+        # need to be sorted because of the format of the joint actions the server can read
         for char in sorted(self.initial_state.agents.keys()):
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
-        # TODO: this part needs extensive overhaul to account for several agents
-
         solutions = []
 
         for char, values in self.goal_state.boxes.items():
+            steps = []
             for value in values:
                 # assigning goals to an agent for all boxes in a colour
                 _, _, box_color = value
@@ -116,10 +114,9 @@ class Client:
 
                 self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
-                if result is None or len(result) == 0:
-                    return None
-                solutions.append(result)
-
+                if result is not None or len(result) > 0:
+                    steps.extend(result)
+            solutions.append(steps)
         return solutions
 
 

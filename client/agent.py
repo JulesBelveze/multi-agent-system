@@ -59,7 +59,7 @@ class Agent:
 
             # Find path to goal box
             path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
-            if self.path_finder.is_path_found((c_box[0], c_box[1])):
+            if path is not None:
                 msg_server_comment("Found path from box {} to goal box".format(self.box_key))
 
                 #TODO: fix code duplication
