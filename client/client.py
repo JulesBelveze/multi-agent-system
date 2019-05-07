@@ -6,10 +6,12 @@ import smt
 
 from agent import Agent
 from state import State
+from action import ActionType
 
 from message import msg_server_err
 from message import msg_server_comment
 from message import msg_server_action
+
 
 class Client:
     def __init__(self, server_args):
@@ -94,13 +96,17 @@ class Client:
     def solve_level(self):
         # Create agents
         self.agents = []
-        for char in self.initial_state.agents.keys():
+
+        # need to be sorted because of the format of the joint actions the
+        # server can read
+        for char in sorted(self.initial_state.agents.keys()):
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
         # TODO: this part needs extensive overhaul to account for several agents
 
         solutions = []
+<<<<<<< HEAD
         for key, boxes in self.goal_state.boxes.items():
             for box in boxes:
                 self.agents[0].assign_goal(self.goal_state, (key, boxes.index(box)))
@@ -109,6 +115,21 @@ class Client:
                 if result is None:
                     return None
                 solutions.append(result)
+=======
+
+        for char, value in self.goal_state.boxes.items():
+            # assigning each goal to an agent by looking at the box color
+            _, _, box_color = value
+            key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
+            key_agent = int(key_agent)
+
+            self.agents[key_agent].assign_goal(self.goal_state, char)
+            result = self.agents[key_agent].find_path_to_goal(self.walls)
+            if result is None:
+                return None
+            solutions.append(result)
+
+>>>>>>> fd714e67449a7a683d4d82ffaeb3a0b251a4cd07
         return solutions
 
 
@@ -141,11 +162,20 @@ def main(args):
     else:
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
-        # printing solution
-        for steps in solution:
-            msg_server_comment("New solution:")
-            for state in steps:
-                msg_server_action("{}".format(state.action))
+        # adding NoOp action for agent that have already satisfied their goals
+        nb_agents = len(solution)
+        max_len_sol = max(len(x) for x in solution)
+        for i in range(nb_agents):
+            padding_state = State(solution[i][-1])
+            padding_state.action = ActionType.NoOp
+            solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+
+        solution = zip(*solution)
+        printer = ";".join(['{}'] * nb_agents)
+        for state in solution:
+            action = [agent.action for agent in state]
+            msg_server_comment(printer.format(*action))
+            msg_server_action(printer.format(*action))
 
 
 if __name__ == "__main__":

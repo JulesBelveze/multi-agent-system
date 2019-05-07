@@ -44,7 +44,7 @@ class State:
 
         agent = self.agents.get(agent_key)
         for action in ALL_ACTIONS:
-            if action.action_type is ActionType.Wait:
+            if action.action_type is ActionType.NoOp:
                 child = State(self)
                 child.parent = self
                 child.action = action
