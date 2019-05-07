@@ -15,10 +15,13 @@ class Path():
         # Setup map
         self.level_grid = copy.deepcopy(walls)
         self.level_grid[end_index[0]][end_index[1]] = True
-        for key, box in state.boxes.items():
-            self.level_grid[box[0]][box[1]] = True
+        for key, boxes in state.boxes.items():
+            for box in boxes:
+                self.level_grid[box[0]][box[1]] = True
 
+        # Expect other agents to be immovable
         for key, agent in state.agents.items():
+            #TODO: Agents can block pathing of box to goal in a narrow tunnel
             self.level_grid[agent[0]][agent[1]] = True
 
         # Setup value grid

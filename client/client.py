@@ -69,7 +69,9 @@ class Client:
                     self.walls[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.initial_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.initial_state.boxes.get(char):
+                        self.initial_state.boxes[char] = []
+                    self.initial_state.boxes[char].append((row, col, color_dict[char]))
                 # looking for agents
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
@@ -82,7 +84,9 @@ class Client:
             for col, char in enumerate(line):
                 # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.goal_state.boxes.get(char):
+                        self.goal_state.boxes[char] = []
+                    self.goal_state.boxes[char].append((row, col, color_dict[char]))
                 elif char not in "+ ":
                     msg_server_err("Error parsing goal level: unexepected character.")
                     sys.exit(1)
@@ -97,14 +101,14 @@ class Client:
         # TODO: this part needs extensive overhaul to account for several agents
 
         solutions = []
-        for char in self.goal_state.boxes.keys():
-            self.agents[0].assign_goal(self.goal_state, char)
+        for key, boxes in self.goal_state.boxes.items():
+            for box in boxes:
+                self.agents[0].assign_goal(self.goal_state, (key, boxes.index(box)))
+                result = self.agents[0].find_path_to_goal(self.walls)
 
-            result = self.agents[0].find_path_to_goal(self.walls)
-            if result is None:
-                return None
-            solutions.append(result)
-
+                if result is None:
+                    return None
+                solutions.append(result)
         return solutions
 
 

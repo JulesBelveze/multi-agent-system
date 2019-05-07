@@ -12,10 +12,9 @@ class Agent:
         self.path_finder = Path()
         self.navigator = Navigate()
 
-    def assign_goal(self, goal_state: 'State', box_key: 'str'):
+    def assign_goal(self, goal_state: 'State', box_key):
         self.goal_state = goal_state
         self.box_key = box_key
-        #self.path_finder.set_path_objective(goal_state, box_key, self.agent_key)
 
     def has_goal(self):
         if self.goal_state is None or self.box_key is None:
@@ -24,8 +23,8 @@ class Agent:
 
     def find_path_to_goal(self, walls):
         agent = self.current_state.agents.get(self.agent_key)
-        c_box = self.current_state.boxes.get(self.box_key)
-        g_box = self.goal_state.boxes.get(self.box_key)
+        c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        g_box = self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
         final_plan = []
 
         # Find path to current box
@@ -72,7 +71,7 @@ class Agent:
                         return None
 
                     current = self.navigator.get_from_frontier()
-                    c_box = current.boxes.get(self.box_key)
+                    c_box = current.boxes.get(self.box_key[0])[self.box_key[1]]
 
                     if self.navigator.h_calculate(c_box, path) - self.navigator.h_calculate(g_box, path) == 0:
                         final_plan = current.extract_plan()

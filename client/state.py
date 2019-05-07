@@ -70,7 +70,7 @@ class State:
                         if self.is_free(walls, new_box_row, new_box_col):
                             child = State(self)
                             child.agents[agent_key] = (new_agent_row, new_agent_col, agent[2])
-                            child.boxes[box_key] = (new_box_row, new_box_col, child.boxes.get(box_key)[2])
+                            child.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, (child.boxes.get(box_key[0])[box_key[1]])[2])
                             child.parent = self
                             child.action = action
                             child.depth += 1
@@ -83,7 +83,7 @@ class State:
                         if self.is_agent_at_box(new_box_row, new_box_col, box_key):
                             child = State(self)
                             child.agents[agent_key] = (new_agent_row, new_agent_col, agent[2])
-                            child.boxes[box_key] = (new_box_row, new_box_col, child.boxes.get(box_key)[2])
+                            child.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, (child.boxes.get(box_key[0])[box_key[1]])[2])
                             child.parent = self
                             child.action = action
                             child.depth += 1
@@ -100,13 +100,15 @@ class State:
             if row == agent[0] and col == agent[1]:
                 return False
         # checking if any box is present
-        for key, box in self.boxes.items():
-            if row == box[0] and col == box[1]:
-                return False
+        for key, boxes in self.boxes.items():
+            for box in boxes:
+                if row == box[0] and col == box[1]:
+                    return False
         return True
 
     def is_agent_at_box(self, agent_row: 'int', agent_col: 'int', box_key: 'str'):
-        return self.boxes.get(box_key)[0] == agent_row and self.boxes.get(box_key)[1] == agent_col
+        box = self.boxes.get(box_key[0])[box_key[1]]
+        return box[0] == agent_row and box[1] == agent_col
 
     # def right_box_at(self, row, col, agent_color):
     #     '''Function checking if an agent can push a box and returning the right box if yes.
@@ -123,7 +125,7 @@ class State:
     def is_goal_state(self, goal_state, box_key: 'str' = None):
         '''Check if current box dictionary (or individual box) matches goal box dictionary'''
         if box_key is not None:
-            return self.boxes.get(box_key) == goal_state.boxes.get(box_key)
+            return self.boxes.get(box_key[0])[box_key[1]] == goal_state.boxes.get(box_key[0])[box_key[1]]
         return self.boxes == goal_state.boxes
 
     def extract_plan(self):
