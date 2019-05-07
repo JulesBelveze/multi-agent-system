@@ -1,18 +1,3 @@
-#domain
-hospital
-#levelname
-SA_ushape
-#colors
-red: 0, A
-#initial
-+++++++++
-+0 A+ + +
-+   +   +
-+ + + + +
-+ + + + +
-+     + +
-+++++++++
-#goal
 +++++++++
 +   +A+ +
 +   +   +
@@ -20,4 +5,3 @@ red: 0, A
 + + + + +
 +     + +
 +++++++++
-#end
