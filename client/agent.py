@@ -82,7 +82,8 @@ class Agent:
                     self.navigator.add_to_explored(current)
                     for child_state in current.get_children(walls, self.agent_key, self.box_key):
                         if not self.navigator.is_explored(child_state) and not self.navigator.in_frontier(child_state):
-                            self.navigator.add_to_frontier(child_state, self.navigator.h_calculate(c_box, path))
+                            n_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
+                            self.navigator.add_to_frontier(child_state, self.navigator.h_calculate(n_box, path))
     
                     iterations += 1
 
