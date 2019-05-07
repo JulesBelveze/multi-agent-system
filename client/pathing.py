@@ -11,14 +11,16 @@ class Path():
     def calc_route(self, walls, start_index, end_index, state: 'State'):
         lvl_rows = len(walls)
         lvl_cols = len(walls[0])
-        self.end_index = end_index
         # Setup map
         self.level_grid = copy.deepcopy(walls)
-        self.level_grid[self.end_index[0]][self.end_index[1]] = True
-        for key, box in state.boxes.items():
-            self.level_grid[box[0]][box[1]] = True
+        self.level_grid[end_index[0]][end_index[1]] = True
+        for key, boxes in state.boxes.items():
+            for box in boxes:
+                self.level_grid[box[0]][box[1]] = True
 
+        # Expect other agents to be immovable
         for key, agent in state.agents.items():
+            #TODO: Agents can block pathing of box to goal in a narrow tunnel
             self.level_grid[agent[0]][agent[1]] = True
 
         # Setup value grid
@@ -26,11 +28,11 @@ class Path():
         self.val_grid.fill(0000)
 
         # Set value of destination and start cells
-        self.val_grid[self.end_index[0]][self.end_index[1]] = 1000
+        self.val_grid[end_index[0]][end_index[1]] = 1000
         self.val_grid[start_index[0]][start_index[1]] = -1
 
         # Map cells
-        self.calc_cells(self.end_index[0], self.end_index[1])
+        self.calc_cells(end_index[0], end_index[1])
 
         if self.is_path_found(start_index):
             return self.val_grid

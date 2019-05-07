@@ -71,7 +71,9 @@ class Client:
                     self.walls[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.initial_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.initial_state.boxes.get(char):
+                        self.initial_state.boxes[char] = []
+                    self.initial_state.boxes[char].append((row, col, color_dict[char]))
                 # looking for agents
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
@@ -84,7 +86,9 @@ class Client:
             for col, char in enumerate(line):
                 # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.goal_state.boxes.get(char):
+                        self.goal_state.boxes[char] = []
+                    self.goal_state.boxes[char].append((row, col, color_dict[char]))
                 elif char not in "+ ":
                     msg_server_err("Error parsing goal level: unexepected character.")
                     sys.exit(1)
@@ -93,28 +97,26 @@ class Client:
         # Create agents
         self.agents = []
 
-        # need to be sorted because of the format of the joint actions the
-        # server can read
+        # need to be sorted because of the format of the joint actions the server can read
         for char in sorted(self.initial_state.agents.keys()):
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
-        # TODO: this part needs extensive overhaul to account for several agents
-
         solutions = []
 
-        for char, value in self.goal_state.boxes.items():
-            # assigning each goal to an agent by looking at the box color
-            _, _, box_color = value
-            key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
-            key_agent = int(key_agent)
+        for char, values in self.goal_state.boxes.items():
+            steps = []
+            for value in values:
+                # assigning goals to an agent for all boxes in a colour
+                _, _, box_color = value
+                key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
+                key_agent = int(key_agent)
 
-            self.agents[key_agent].assign_goal(self.goal_state, char)
-            result = self.agents[key_agent].find_path_to_goal(self.walls)
-            if result is None:
-                return None
-            solutions.append(result)
-
+                self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
+                result = self.agents[key_agent].find_path_to_goal(self.walls)
+                if result is not None or len(result) > 0:
+                    steps.extend(result)
+            solutions.append(steps)
         return solutions
 
 
