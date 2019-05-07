@@ -118,6 +118,57 @@ class Client:
         return solutions
 
 
+def get_box_key_by_position(row, col, state: 'State'):
+    '''Return the key of a box at a given position'''
+    return [key for key, value in state.boxes.items() if (value[0], value[1]) == (row, col)][0]
+
+
+def check_action(actions, current_state: 'State', walls):
+    '''Check if every agent's action is applicable in the current state and returns
+    a list with the index of the agents' whose action are not applicable'''
+    next_state = State(current_state)
+    index_non_applicable = []
+    is_applicable = True
+
+    for i, action in enumerate(actions):
+        i = str(i)
+        row, col, color = current_state.agents[i]
+        if action.action_type is ActionType.NoOp:
+            continue
+        else:
+            new_agent_row = row + action.agent_dir.d_row
+            new_agent_col = col + action.agent_dir.d_col
+
+            if action.action_type is ActionType.Move:
+                if current_state.is_free(walls, new_agent_row, new_agent_col):
+                    next_state.agents[i] = new_agent_row, new_agent_col, color
+                else:
+                    index_non_applicable.append(i)
+                    is_applicable = False
+            elif action.action_type is ActionType.Push:
+                box_key = get_box_key_by_position(new_agent_row, new_agent_col, current_state)
+                new_box_row = new_agent_row + action.box_dir.d_row
+                new_box_col = new_agent_col + action.box_dir.d_col
+                if current_state.is_free(walls, new_box_row, new_box_col):
+                    next_state.agents[i] = (new_agent_row, new_agent_col, color)
+                    next_state.boxes[box_key] = (new_box_row, new_box_col, color)
+                else:
+                    index_non_applicable.append(i)
+                    is_applicable = False
+            elif action.action_type is ActionType.Pull:
+                box_key = get_box_key_by_position(new_agent_row, new_agent_col, current_state)
+                new_box_row = row + action.box_dir.d_row
+                new_box_col = col + action.box_dir.d_col
+                if current_state.is_free(walls, new_agent_row, new_agent_col):
+                    next_state.agents[i] = (new_agent_row, new_agent_col, color)
+                    next_state.boxes[box_key] = (new_box_row, new_box_col, color)
+                else:
+                    index_non_applicable.append(i)
+                    is_applicable = False
+
+    return index_non_applicable, next_state, is_applicable
+
+
 def main(args):
     level_data = None
 
@@ -139,6 +190,8 @@ def main(args):
 
     # Create client using server messages
     starfish_client = Client(level_data)
+    current_state = starfish_client.initial_state
+    walls = starfish_client.walls
 
     # Solve and print
     solution = starfish_client.solve_level()
@@ -157,10 +210,22 @@ def main(args):
 
         solution = zip(*solution)
         printer = ";".join(['{}'] * nb_agents)
-        for state in solution:
+        for it, state in enumerate(solution):
             action = [agent.action for agent in state]
+
+            index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
+            msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
+
+            if not is_applicable:
+                for key_agent in index_non_applicable:
+                    action[int(key_agent)] = ActionType.NoOp
+
             msg_server_comment(printer.format(*action))
             msg_server_action(printer.format(*action))
+
+            response = level_data.readline().rstrip()
+            if 'false' in response:
+                msg_server_err("Server answered with error to the action " + printer.format(*action))
 
 
 if __name__ == "__main__":
