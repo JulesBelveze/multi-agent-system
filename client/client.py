@@ -106,30 +106,20 @@ class Client:
         # TODO: this part needs extensive overhaul to account for several agents
 
         solutions = []
-<<<<<<< HEAD
-        for key, boxes in self.goal_state.boxes.items():
-            for box in boxes:
-                self.agents[0].assign_goal(self.goal_state, (key, boxes.index(box)))
-                result = self.agents[0].find_path_to_goal(self.walls)
 
-                if result is None:
+        for char, values in self.goal_state.boxes.items():
+            for value in values:
+                # assigning goals to an agent for all boxes in a colour
+                _, _, box_color = value
+                key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
+                key_agent = int(key_agent)
+
+                self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
+                result = self.agents[key_agent].find_path_to_goal(self.walls)
+                if result is None or len(result) == 0:
                     return None
                 solutions.append(result)
-=======
 
-        for char, value in self.goal_state.boxes.items():
-            # assigning each goal to an agent by looking at the box color
-            _, _, box_color = value
-            key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
-            key_agent = int(key_agent)
-
-            self.agents[key_agent].assign_goal(self.goal_state, char)
-            result = self.agents[key_agent].find_path_to_goal(self.walls)
-            if result is None:
-                return None
-            solutions.append(result)
-
->>>>>>> fd714e67449a7a683d4d82ffaeb3a0b251a4cd07
         return solutions
 
 
