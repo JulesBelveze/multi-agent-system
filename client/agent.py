@@ -44,7 +44,8 @@ class Agent:
                 agent = current.agents.get(self.agent_key)
 
                 # Is the agent next to the box that needs to be moved?
-                if abs(self.navigator.h_calculate(agent, path) - self.navigator.h_calculate(c_box, path)) == 1:
+                #TODO: should not compare to magic value
+                if abs(self.navigator.h_calculate(agent, path) - self.navigator.h_calculate(c_box, path)) == 10:
                     final_plan = current.extract_plan()
                     self.current_state = current
                     self.navigator = Navigate() # This line was so painful to type as a C++ guy
