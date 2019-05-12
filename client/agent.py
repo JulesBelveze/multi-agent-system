@@ -4,11 +4,12 @@ from message import msg_server_action
 
 from pathing import Path
 from pathing import Navigate
+from state import State
 
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
-        self.current_state = initial_state
+        self.current_state = State(initial_state)
         self.path_finder = Path()
         self.navigator = Navigate()
 
