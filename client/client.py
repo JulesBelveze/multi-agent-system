@@ -15,6 +15,7 @@ from message import msg_server_action
 
 class Client:
     def __init__(self, server_args):
+        #TODO: Consider adding input checks to verify level is correct, example: agent 0 not allowed to be red and green
         try:
             line = server_args.readline().rstrip()
             # catching level colors meta-data that are wrapped between #colors and #initial lines
@@ -25,10 +26,9 @@ class Client:
             color_dict = {}
             while line != "#initial":
                 color = line.split(":")[0]
-                agent = line.split(":")[1].split(",")[0].strip()
-                goal = line.split(":")[1].split(",")[1].strip()
-                color_dict[agent] = color
-                color_dict[goal] = color
+                for i, char in enumerate(line.split(":")[1].split(",")):
+                    color_dict[char.strip()] = color
+
                 line = server_args.readline().rstrip()
             line = server_args.readline().rstrip()
 
