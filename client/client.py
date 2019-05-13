@@ -1,11 +1,13 @@
 from __future__ import print_function
 from argparse import ArgumentParser
+from copy import deepcopy
 import numpy as np
 import sys
 import smt
 
 from agent import Agent
 from state import State
+from action import Action
 from action import ActionType
 
 from message import msg_server_err
@@ -86,7 +88,7 @@ class Client:
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                     self.goal_state.boxes[char] = (row, col, color_dict[char])
                 elif char not in "+ ":
-                    msg_server_err("Error parsing goal level: unexepected character.")
+                    msg_server_err("Error parsing goal level: unexpected character.")
                     sys.exit(1)
 
     def solve_level(self):
@@ -120,6 +122,9 @@ class Client:
 
 def get_box_key_by_position(row, col, state: 'State'):
     '''Return the key of a box at a given position'''
+    msg_server_comment("row: {} / col: {}".format(row, col))
+    msg_server_comment(state.boxes)
+    # msg_server_comment([key for key, value in state.boxes.items() if (value[0], value[1]) == (row, col)])
     return [key for key, value in state.boxes.items() if (value[0], value[1]) == (row, col)][0]
 
 
@@ -169,6 +174,17 @@ def check_action(actions, current_state: 'State', walls):
     return index_non_applicable, next_state, is_applicable
 
 
+def add_padding_actions(solution, nb_agents):
+    '''adding NoOp action for agent that have already satisfied their goals'''
+    max_len_sol = max(len(x) for x in solution)
+    for i in range(nb_agents):
+        padding_state = State(solution[i][-1])
+        padding_state.action = ActionType.NoOp
+        solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+
+    return solution
+
+
 def main(args):
     level_data = None
 
@@ -190,7 +206,7 @@ def main(args):
 
     # Create client using server messages
     starfish_client = Client(level_data)
-    current_state = starfish_client.initial_state
+    current_state = deepcopy(starfish_client.initial_state)
     walls = starfish_client.walls
 
     # Solve and print
@@ -200,19 +216,17 @@ def main(args):
     else:
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
-        # adding NoOp action for agent that have already satisfied their goals
         nb_agents = len(solution)
-        max_len_sol = max(len(x) for x in solution)
-        for i in range(nb_agents):
-            padding_state = State(solution[i][-1])
-            padding_state.action = ActionType.NoOp
-            solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+        solution = add_padding_actions(solution, nb_agents)
 
-        solution = zip(*solution)
+        # create the joint actions
         printer = ";".join(['{}'] * nb_agents)
-        for it, state in enumerate(solution):
-            action = [agent.action for agent in state]
+        msg_server_comment(len(solution[0]))
+        for i in range(len(solution[0])):
+            state = [elt[i] for elt in solution]
 
+            action = [agent.action for agent in state]
+            msg_server_comment(action)
             index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
             msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
 
@@ -220,7 +234,30 @@ def main(args):
                 for key_agent in index_non_applicable:
                     action[int(key_agent)] = ActionType.NoOp
 
-            msg_server_comment(printer.format(*action))
+                new_solution = []
+                for i, agent in enumerate(starfish_client.agents):
+                    box_key = starfish_client.agents[i].box_key
+                    starfish_client.agents[i] = Agent(current_state, agent.agent_key)
+                    starfish_client.agents[i].assign_goal(starfish_client.goal_state, box_key)
+                    new_solution.append(starfish_client.agents[i].find_path_to_goal(walls))
+
+                msg_server_comment(new_solution)
+                sys.exit()
+                # new_solution = starfish_client.solve_level()
+
+                sys.exit()
+                new_solution = add_padding_actions(new_solution, nb_agents)
+
+                hack_state = current_state
+                hack_state.action = Action(ActionType.NoOp, None, None)
+
+                for i in range(len(solution)):
+                    solution[i] = [hack_state] * len(solution[i])
+                    solution[i].append(new_solution[i])
+
+                msg_server_comment("HEYYYYY: {}".format(len(solution[0])))
+                msg_server_comment("Switching to action: " + printer.format(*action))
+
             msg_server_action(printer.format(*action))
 
             response = level_data.readline().rstrip()
