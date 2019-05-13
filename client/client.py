@@ -123,8 +123,8 @@ class Client:
 def main(args):
     level_data = None
 
-    if args.debug == True:
-        level_name = args.levelName
+    if args.debugLevel is not None:
+        level_name = args.debugLevel
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
         print("Loading level:", level_name)
 
@@ -168,10 +168,8 @@ def main(args):
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-    parser.add_argument('--debug', type=bool, default=False,
-                        help='Setting to true will allow to run client without server')
-    parser.add_argument('--levelName', default='MA_example',
-                        help='Provide the name of a level for client to run (requires debug arg)')
+    parser.add_argument('--debugLevel', default=None,
+                        help='Provide the name of a level for client to run in debug mode')
 
     args = parser.parse_args()
 
