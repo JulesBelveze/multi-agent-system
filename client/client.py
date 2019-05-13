@@ -17,6 +17,7 @@ from message import msg_server_action
 
 class Client:
     def __init__(self, server_args):
+        #TODO: Consider adding input checks to verify level is correct, example: agent 0 not allowed to be red and green
         try:
             line = server_args.readline().rstrip()
             # catching level colors meta-data that are wrapped between #colors and #initial lines
@@ -27,10 +28,9 @@ class Client:
             color_dict = {}
             while line != "#initial":
                 color = line.split(":")[0]
-                agent = line.split(":")[1].split(",")[0].strip()
-                goal = line.split(":")[1].split(",")[1].strip()
-                color_dict[agent] = color
-                color_dict[goal] = color
+                for i, char in enumerate(line.split(":")[1].split(",")):
+                    color_dict[char.strip()] = color
+
                 line = server_args.readline().rstrip()
             line = server_args.readline().rstrip()
 
@@ -73,7 +73,9 @@ class Client:
                     self.walls[row][col] = True
                 # looking for boxes
                 elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.initial_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.initial_state.boxes.get(char):
+                        self.initial_state.boxes[char] = []
+                    self.initial_state.boxes[char].append((row, col, color_dict[char]))
                 # looking for agents
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
@@ -86,7 +88,9 @@ class Client:
             for col, char in enumerate(line):
                 # looking for boxes
                 if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    self.goal_state.boxes[char] = (row, col, color_dict[char])
+                    if not self.goal_state.boxes.get(char):
+                        self.goal_state.boxes[char] = []
+                    self.goal_state.boxes[char].append((row, col, color_dict[char]))
                 elif char not in "+ ":
                     msg_server_err("Error parsing goal level: unexpected character.")
                     sys.exit(1)
@@ -95,28 +99,26 @@ class Client:
         # Create agents
         self.agents = []
 
-        # need to be sorted because of the format of the joint actions the
-        # server can read
+        # need to be sorted because of the format of the joint actions the server can read
         for char in sorted(self.initial_state.agents.keys()):
             self.agents.append(Agent(self.initial_state, char))
 
         # Assign goal to agents
-        # TODO: this part needs extensive overhaul to account for several agents
-
         solutions = []
 
-        for char, value in self.goal_state.boxes.items():
-            # assigning each goal to an agent by looking at the box color
-            _, _, box_color = value
-            key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
-            key_agent = int(key_agent)
+        for char, values in self.goal_state.boxes.items():
+            steps = []
+            for value in values:
+                # assigning goals to an agent for all boxes in a colour
+                _, _, box_color = value
+                key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
+                key_agent = int(key_agent)
 
-            self.agents[key_agent].assign_goal(self.goal_state, char)
-            result = self.agents[key_agent].find_path_to_goal(self.walls)
-            if result is None:
-                return None
-            solutions.append(result)
-
+                self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
+                result = self.agents[key_agent].find_path_to_goal(self.walls)
+                if result is not None or len(result) > 0:
+                    steps.extend(result)
+            solutions.append(steps)
         return solutions
 
 
@@ -188,8 +190,8 @@ def add_padding_actions(solution, nb_agents):
 def main(args):
     level_data = None
 
-    if args.debug == True:
-        level_name = args.levelName
+    if args.debugLevel is not None:
+        level_name = args.debugLevel
         print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
         print("Loading level:", level_name)
 
@@ -268,10 +270,8 @@ def main(args):
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Starfish client for solving transportation tasks.')
-    parser.add_argument('--debug', type=bool, default=False,
-                        help='Setting to true will allow to run client without server')
-    parser.add_argument('--levelName', default='MA_example',
-                        help='Provide the name of a level for client to run (requires debug arg)')
+    parser.add_argument('--debugLevel', default=None,
+                        help='Provide the name of a level for client to run in debug mode')
 
     args = parser.parse_args()
 

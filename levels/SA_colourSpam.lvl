@@ -1,0 +1,28 @@
+#domain
+hospital
+#levelname
+SA_colourSpam
+#colors
+blue: 0, A, B, C
+red: 1, D
+cyan: 2, E, F
+purple: 3, G
+green: 4, H
+orange: 5
+pink: 6
+grey: 7
+lightblue: 8, I, J, K
+brown: 9, L, M
+#initial
+++++++++++++++++++
++0123456789      +
++                +
++ABCDEFGHIJKLM   +
+++++++++++++++++++
+#goal
+++++++++++++++++++
++             CBA+
++               M+
++               H+
+++++++++++++++++++
+#end
