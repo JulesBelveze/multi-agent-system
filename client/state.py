@@ -1,12 +1,12 @@
 from action import ALL_ACTIONS, ActionType
-#from action import ALL_ACTIONS, ActionType
+import copy
 
 
 class State:
-    def __init__(self, copy: 'State' = None, **kwargs):
+    def __init__(self, duplicate: 'State' = None, **kwargs):
         '''
-        If copy is None: Creates an empty State.
-        If copy is not None: Creates a copy of the copy state.
+        If duplicate is None: Creates an empty State.
+        If duplicate is not None: Creates a copy of the duplicate state.
 
         The lists boxes, and goals are indexed from top-left of the level, row-major order (row, col).
                Col 0  Col 1  Col 2  Col 3
@@ -19,7 +19,7 @@ class State:
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
         self._hash = None
-        if copy is None:
+        if duplicate is None:
             self.agents = {}
             self.boxes = {}
 
@@ -28,13 +28,13 @@ class State:
 
             self.depth = 0
         else:
-            self.agents = dict(copy.agents)
-            self.boxes = dict(copy.boxes)
+            self.agents = dict(duplicate.agents)
+            self.boxes = dict(copy.deepcopy(duplicate.boxes))
 
-            self.parent = copy.parent
-            self.action = copy.action
+            self.parent = duplicate.parent
+            self.action = duplicate.action
 
-            self.depth = copy.depth
+            self.depth = duplicate.depth
 
     def get_children(self, walls, agent_key, box_key):
         '''
