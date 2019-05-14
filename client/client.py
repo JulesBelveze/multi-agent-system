@@ -114,7 +114,7 @@ class Client:
 
                 self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
-                if result is not None or len(result) > 0:
+                if result is not None and len(result) > 0:
                     steps.extend(result)
             solutions.append(steps)
         return solutions
@@ -152,6 +152,11 @@ def main(args):
         # adding NoOp action for agent that have already satisfied their goals
         nb_agents = len(solution)
         max_len_sol = max(len(x) for x in solution)
+
+        if max_len_sol == 0:
+            msg_server_err("The solution was empty!")
+            return
+
         for i in range(nb_agents):
             padding_state = State(solution[i][-1])
             padding_state.action = ActionType.NoOp
