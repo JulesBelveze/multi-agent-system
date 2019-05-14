@@ -44,9 +44,8 @@ class Agent:
                 current = self.navigator.get_from_frontier()
                 agent = current.agents.get(self.agent_key)
 
-                # Is the agent next to the box that needs to be moved?
-                #TODO: should not compare to magic value
-                if abs(self.navigator.h_calculate(agent, path) - self.navigator.h_calculate(c_box, path)) == 10:
+                # Is the agent next to the box that needs to be moved? (Manhattan dist)
+                if abs(c_box[0] - agent[0]) + abs(c_box[1] - agent[1]) == 1:
                     final_plan = current.extract_plan()
                     self.current_state = current
                     self.navigator = Navigate() # This line was so painful to type as a C++ guy
@@ -84,7 +83,7 @@ class Agent:
                     self.navigator.add_to_explored(current)
                     for child_state in current.get_children(walls, self.agent_key, self.box_key):
                         if not self.navigator.is_explored(child_state) and not self.navigator.in_frontier(child_state):
-                            n_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
+                            n_box = child_state.boxes.get(self.box_key[0])[self.box_key[1]]
                             self.navigator.add_to_frontier(child_state, self.navigator.h_calculate(n_box, path))
     
                     iterations += 1
