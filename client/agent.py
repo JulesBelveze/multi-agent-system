@@ -39,7 +39,7 @@ class Agent:
             iterations = 0
             h_target = agent
             for nav_step in range(0, 2):
-                self.navigator.add_to_frontier(self.current_state, self.navigator.h_calculate(h_target, path))
+                self.navigator.add_to_frontier(self.current_state, h_target, path)
                 while iterations < 16000:
                     if self.navigator.frontier_count() == 0:
                         msg_server_err("Failed to navigate agent {} to box {}!".format(self.agent_key, self.box_key))
@@ -54,7 +54,7 @@ class Agent:
                         h_target = agent
                     else:
                         c_box = current.boxes.get(self.box_key[0])[self.box_key[1]]
-                        is_sub_goal = self.navigator.h_calculate(c_box, path) - self.navigator.h_calculate(g_box, path) == 0
+                        is_sub_goal = path[c_box[0]][c_box[1]] - path[g_box[0]][g_box[1]] == 0
 
                     if is_sub_goal:
                         is_sub_goal = False
@@ -70,7 +70,7 @@ class Agent:
                         if not self.navigator.is_explored(child_state) and not self.navigator.in_frontier(child_state):
                             if nav_step > 0:
                                 h_target = child_state.boxes.get(self.box_key[0])[self.box_key[1]]
-                            self.navigator.add_to_frontier(child_state, self.navigator.h_calculate(h_target, path))
+                            self.navigator.add_to_frontier(child_state, h_target, path)
 
                     iterations += 1
 
