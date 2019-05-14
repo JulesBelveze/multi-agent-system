@@ -17,7 +17,7 @@ from message import msg_server_action
 
 class Client:
     def __init__(self, server_args):
-        #TODO: Consider adding input checks to verify level is correct, example: agent 0 not allowed to be red and green
+        # TODO: Consider adding input checks to verify level is correct, example: agent 0 not allowed to be red and green
         try:
             line = server_args.readline().rstrip()
             # catching level colors meta-data that are wrapped between #colors and #initial lines
@@ -124,10 +124,12 @@ class Client:
 
 def get_box_key_by_position(row, col, state: 'State'):
     '''Return the key of a box at a given position'''
-    msg_server_comment("row: {} / col: {}".format(row, col))
-    msg_server_comment(state.boxes)
-    # msg_server_comment([key for key, value in state.boxes.items() if (value[0], value[1]) == (row, col)])
-    return [key for key, value in state.boxes.items() if (value[0], value[1]) == (row, col)][0]
+    for key, boxes in state.boxes.items():
+        for box in boxes:
+            row_box, col_box, _ = box
+            if row == row_box and col == col_box:
+                return key
+    return None
 
 
 def check_action(actions, current_state: 'State', walls):
@@ -240,6 +242,8 @@ def main(args):
                 for i, agent in enumerate(starfish_client.agents):
                     box_key = starfish_client.agents[i].box_key
                     starfish_client.agents[i] = Agent(current_state, agent.agent_key)
+                    msg_server_comment(box_key)
+                    sys.exit()
                     starfish_client.agents[i].assign_goal(starfish_client.goal_state, box_key)
                     new_solution.append(starfish_client.agents[i].find_path_to_goal(walls))
 
