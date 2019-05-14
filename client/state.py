@@ -72,53 +72,6 @@ class State:
 
             if child is not None:
                 children.append(child)
-
-        # agent = self.agents.get(agent_key)
-        # for action in ALL_ACTIONS:
-        #     if action.action_type is ActionType.NoOp:
-        #         child = State(self)
-        #         child.parent = self
-        #         child.action = action
-        #         child.depth += 1
-        #         children.append(child)
-        #     else:
-        #         new_agent_row = agent[0] + action.agent_dir.d_row
-        #         new_agent_col = agent[1] + action.agent_dir.d_col
-
-        #         if action.action_type is ActionType.Move:
-        #             if self.is_free(walls, new_agent_row, new_agent_col):
-        #                 child = State(self)
-        #                 child.agents[agent_key] = (new_agent_row, new_agent_col, agent[2])
-        #                 child.parent = self
-        #                 child.action = action
-        #                 child.depth += 1
-        #                 children.append(child)
-                    
-        #         elif action.action_type is ActionType.Push and box_key is not None:
-        #             if self.is_agent_at_box(new_agent_row, new_agent_col, box_key):
-        #                 new_box_row = new_agent_row + action.box_dir.d_row
-        #                 new_box_col = new_agent_col + action.box_dir.d_col
-        #                 if self.is_free(walls, new_box_row, new_box_col):
-        #                     child = State(self)
-        #                     child.agents[agent_key] = (new_agent_row, new_agent_col, agent[2])
-        #                     child.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, (child.boxes.get(box_key[0])[box_key[1]])[2])
-        #                     child.parent = self
-        #                     child.action = action
-        #                     child.depth += 1
-        #                     children.append(child)
-                            
-        #         elif action.action_type is ActionType.Pull and box_key is not None:
-        #             if self.is_free(walls, new_agent_row, new_agent_col):
-        #                 new_box_row = agent[0] + action.box_dir.d_row
-        #                 new_box_col = agent[1] + action.box_dir.d_col
-        #                 if self.is_agent_at_box(new_box_row, new_box_col, box_key):
-        #                     child = State(self)
-        #                     child.agents[agent_key] = (new_agent_row, new_agent_col, agent[2])
-        #                     child.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, (child.boxes.get(box_key[0])[box_key[1]])[2])
-        #                     child.parent = self
-        #                     child.action = action
-        #                     child.depth += 1
-        #                     children.append(child)
         return children
 
     def create_child_state(self, action):
@@ -154,14 +107,6 @@ class State:
         box = self.boxes.get(box_key[0])[box_key[1]]
         return box[0] == agent_row and box[1] == agent_col
 
-    # def right_box_at(self, row, col, agent_color):
-    #     '''Function checking if an agent can push a box and returning the right box if yes.
-    #     Meaning checking the location and the color of the boxes'''
-    #     for box, box_values in self.boxes.items():
-    #         if row == box_values[0] and col == box_values[1] and agent_color == box_values[2]:
-    #             return True, box
-    #     return False, None
-
     def is_initial_state(self):
         '''Checking if state is the initial one by checking if it has a parent state'''
         return self.parent is None
@@ -180,3 +125,20 @@ class State:
             state = state.parent
         plan.reverse()
         return plan
+
+    def __repr__(self):
+        lines = []
+        for i, agent in self.agents.items():
+            line = []
+            line.append("Agent {} [{}, {}, {}]: ".format(i, agent[0], agent[1], agent[2]))
+
+            for j, boxes in self.boxes.items():
+                for box in boxes:
+                    # Make sure boxes are grouped by colour
+                    if box[2] == agent[2]:
+                        line.append("{} [{}, {}] ".format(j, box[0], box[1]))
+
+            lines.append(''.join(line))
+        lines.append("Action: {}, Depth: {}".format(self.action, self.depth))
+        return '\n'.join(lines)
+
