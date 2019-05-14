@@ -177,7 +177,7 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
 
-    return index_non_applicable, next_state, is_applicable
+    return index_non_applicable, deepcopy(next_state), is_applicable
 
 
 def add_padding_actions(solution, nb_agents):
@@ -185,7 +185,7 @@ def add_padding_actions(solution, nb_agents):
     max_len_sol = max(len(x) for x in solution)
     for i in range(nb_agents):
         padding_state = State(solution[i][-1])
-        padding_state.action = ActionType.NoOp
+        padding_state.action = Action(ActionType.NoOp, None, None)
         solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
 
     return solution
@@ -246,10 +246,10 @@ def main(args):
                     box_key = starfish_client.agents[j].box_key
                     starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                     starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
+                    new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
+
 
                 new_solution = add_padding_actions(new_solution, nb_agents)
-
                 hack_state = deepcopy(current_state)
                 hack_state.action = Action(ActionType.NoOp, None, None)
 

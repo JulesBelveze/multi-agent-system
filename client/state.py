@@ -62,7 +62,7 @@ class State:
                         child.action = action
                         child.depth += 1
                         children.append(child)
-                    
+
                 elif action.action_type is ActionType.Push and box_key is not None:
                     if self.is_agent_at_box(new_agent_row, new_agent_col, box_key):
                         new_box_row = new_agent_row + action.box_dir.d_row
@@ -75,7 +75,7 @@ class State:
                             child.action = action
                             child.depth += 1
                             children.append(child)
-                            
+
                 elif action.action_type is ActionType.Pull and box_key is not None:
                     if self.is_free(walls, new_agent_row, new_agent_col):
                         new_box_row = agent[0] + action.box_dir.d_row
