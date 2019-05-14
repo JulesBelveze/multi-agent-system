@@ -124,22 +124,24 @@ class Client:
 
 def get_box_key_by_position(row, col, state: 'State'):
     '''Return the key of a box at a given position'''
+    # msg_server_comment(state.boxes)
     for key, boxes in state.boxes.items():
-        for box in boxes:
+        for i, box in enumerate(boxes):
             row_box, col_box, _ = box
             if row == row_box and col == col_box:
-                return key
+                return (key, i)
     return None
 
 
 def check_action(actions, current_state: 'State', walls):
     '''Check if every agent's action is applicable in the current state and returns
     a list with the index of the agents' whose action are not applicable'''
-    next_state = State(current_state)
+    next_state = deepcopy(current_state)
     index_non_applicable = []
     is_applicable = True
 
     for i, action in enumerate(actions):
+
         i = str(i)
         row, col, color = current_state.agents[i]
         if action.action_type is ActionType.NoOp:
@@ -160,7 +162,7 @@ def check_action(actions, current_state: 'State', walls):
                 new_box_col = new_agent_col + action.box_dir.d_col
                 if current_state.is_free(walls, new_box_row, new_box_col):
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
-                    next_state.boxes[box_key] = (new_box_row, new_box_col, color)
+                    next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 else:
                     index_non_applicable.append(i)
                     is_applicable = False
@@ -170,7 +172,7 @@ def check_action(actions, current_state: 'State', walls):
                 new_box_col = col + action.box_dir.d_col
                 if current_state.is_free(walls, new_agent_row, new_agent_col):
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
-                    next_state.boxes[box_key] = (new_box_row, new_box_col, color)
+                    next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 else:
                     index_non_applicable.append(i)
                     is_applicable = False
@@ -225,12 +227,13 @@ def main(args):
 
         # create the joint actions
         printer = ";".join(['{}'] * nb_agents)
-        msg_server_comment(len(solution[0]))
-        for i in range(len(solution[0])):
+
+        i = 0
+        while len(solution[0]) > 0:
+            msg_server_comment(len(solution[0]))
             state = [elt[i] for elt in solution]
 
             action = [agent.action for agent in state]
-            msg_server_comment(action)
             index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
             msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
 
@@ -239,33 +242,26 @@ def main(args):
                     action[int(key_agent)] = ActionType.NoOp
 
                 new_solution = []
-                for i, agent in enumerate(starfish_client.agents):
-                    box_key = starfish_client.agents[i].box_key
-                    starfish_client.agents[i] = Agent(current_state, agent.agent_key)
-                    msg_server_comment(box_key)
-                    sys.exit()
-                    starfish_client.agents[i].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(starfish_client.agents[i].find_path_to_goal(walls))
+                for j, agent in enumerate(starfish_client.agents):
+                    box_key = starfish_client.agents[j].box_key
+                    starfish_client.agents[j] = Agent(current_state, agent.agent_key)
+                    starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
+                    new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
 
-                msg_server_comment(new_solution)
-                sys.exit()
-                # new_solution = starfish_client.solve_level()
-
-                sys.exit()
                 new_solution = add_padding_actions(new_solution, nb_agents)
 
-                hack_state = current_state
+                hack_state = deepcopy(current_state)
                 hack_state.action = Action(ActionType.NoOp, None, None)
 
                 for i in range(len(solution)):
                     solution[i] = [hack_state] * len(solution[i])
-                    solution[i].append(new_solution[i])
+                    solution[i].extend(new_solution[i])
 
-                msg_server_comment("HEYYYYY: {}".format(len(solution[0])))
                 msg_server_comment("Switching to action: " + printer.format(*action))
-
             msg_server_action(printer.format(*action))
 
+            solution[0].pop(0)
+            i += 1
             response = level_data.readline().rstrip()
             if 'false' in response:
                 msg_server_err("Server answered with error to the action " + printer.format(*action))
