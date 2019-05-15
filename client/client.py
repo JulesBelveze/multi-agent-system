@@ -136,7 +136,7 @@ def get_box_key_by_position(row, col, state: 'State'):
 def check_action(actions, current_state: 'State', walls):
     '''Check if every agent's action is applicable in the current state and returns
     a list with the index of the agents' whose action are not applicable'''
-    next_state = deepcopy(current_state)
+    next_state = current_state
     index_non_applicable = []
     is_applicable = True
 
@@ -177,7 +177,7 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
 
-    return index_non_applicable, deepcopy(next_state), is_applicable
+    return index_non_applicable, next_state, is_applicable
 
 
 def add_padding_actions(solution, nb_agents):
@@ -260,7 +260,6 @@ def main(args):
                 msg_server_comment("Switching to action: " + printer.format(*action))
             msg_server_action(printer.format(*action))
 
-            solution[0].pop(0)
             i += 1
             response = level_data.readline().rstrip()
             if 'false' in response:
