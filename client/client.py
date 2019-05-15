@@ -136,7 +136,7 @@ def get_box_key_by_position(row, col, state: 'State'):
 def check_action(actions, current_state: 'State', walls):
     '''Check if every agent's action is applicable in the current state and returns
     a list with the index of the agents' whose action are not applicable'''
-    next_state = current_state
+    next_state = State(current_state)
     index_non_applicable = []
     is_applicable = True
 
