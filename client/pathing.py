@@ -46,7 +46,7 @@ class Path():
         r = h_index + 1
         dh,vr,vl,uh = False,False,False,False
         dh_vicinity,vr_vicinity,vl_vicinity,uh_vicinity = [],[],[],[]
-        
+
         if self.level_grid[u][h_index] != True:
             #Calculate Empty North Cell (NC)
             if self.val_grid[u-1][h_index] >= 1:# Cell North of NC
@@ -65,7 +65,7 @@ class Path():
             self.level_grid[u][h_index] = True
             uh = True
 
-        if self.level_grid[v_index][r] != True: 
+        if self.level_grid[v_index][r] != True:
             #Calculate Empty East Cell (EC)
             if self.val_grid[v_index-1][r] >= 1:# Cell North of EC
                 vr_vicinity.append(self.val_grid[v_index-1][r])
@@ -83,7 +83,7 @@ class Path():
             self.level_grid[v_index][r] = True
             vr = True
 
-        if self.level_grid[d][h_index] != True: 
+        if self.level_grid[d][h_index] != True:
             #Calculate Empty South Cell (SC)
             if self.val_grid[d-1][h_index] >= 1:# Cell North of SC
                 dh_vicinity.append(self.val_grid[d-1][h_index])
@@ -179,11 +179,11 @@ class Navigate:
     def explored_count(self):
         return len(self.closed)
 
-    def add_to_frontier(self, state, heuristic):
-        heapq.heappush(self.frontier, (heuristic, self.unique_count, state))
+    def add_to_frontier(self, state, h_target, path):
+        heapq.heappush(self.frontier, (self.h_calculate(h_target, path), self.unique_count, state))
         self.open.add(state)
         self.unique_count += 1
-    
+
     def get_from_frontier(self):
         leaf = heapq.heappop(self.frontier)[2]
         self.open.remove(leaf)

@@ -116,7 +116,7 @@ class Client:
 
                 self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
-                if result is not None or len(result) > 0:
+                if result is not None and len(result) > 0:
                     steps.extend(result)
             solutions.append(steps)
         return solutions
@@ -141,7 +141,6 @@ def check_action(actions, current_state: 'State', walls):
     is_applicable = True
 
     for i, action in enumerate(actions):
-
         i = str(i)
         row, col, color = current_state.agents[i]
         if action.action_type is ActionType.NoOp:
@@ -182,13 +181,20 @@ def check_action(actions, current_state: 'State', walls):
 
 def add_padding_actions(solution, nb_agents):
     '''adding NoOp action for agent that have already satisfied their goals'''
-    max_len_sol = max(len(x) for x in solution)
+    max_len_sol = max(getLen(x) for x in solution)
     for i in range(nb_agents):
         padding_state = State(solution[i][-1])
         padding_state.action = Action(ActionType.NoOp, None, None)
         solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
 
     return solution
+
+
+def getLen(obj):
+    if obj is None:
+        return 0
+    else:
+        return len(obj)
 
 
 def main(args):
@@ -223,14 +229,11 @@ def main(args):
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
         nb_agents = len(solution)
+
         solution = add_padding_actions(solution, nb_agents)
-
-        # create the joint actions
         printer = ";".join(['{}'] * nb_agents)
-
         i = 0
         while len(solution[0]) > 0:
-            msg_server_comment(len(solution[0]))
             state = [elt[i] for elt in solution]
 
             action = [agent.action for agent in state]
@@ -246,8 +249,8 @@ def main(args):
                     box_key = starfish_client.agents[j].box_key
                     starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                     starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
 
+                    new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
 
                 new_solution = add_padding_actions(new_solution, nb_agents)
                 hack_state = deepcopy(current_state)
