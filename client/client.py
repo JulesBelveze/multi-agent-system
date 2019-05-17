@@ -166,9 +166,13 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
             elif action.action_type is ActionType.Pull:
-                box_key = get_box_key_by_position(new_agent_row, new_agent_col, current_state)
-                new_box_row = row + action.box_dir.d_row
-                new_box_col = col + action.box_dir.d_col
+                box_row = row + action.box_dir.d_row
+                box_col = col + action.box_dir.d_col
+                box_key = get_box_key_by_position(box_row, box_col, current_state)
+
+                new_box_row = box_row + action.box_dir.d_row * -1
+                new_box_col = box_col + action.box_dir.d_col * -1
+
                 if current_state.is_free(walls, new_agent_row, new_agent_col):
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
                     next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
