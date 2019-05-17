@@ -20,15 +20,9 @@ class Path():
                 self.level_grid[box[0]][box[1]] = True
 
         # Expect other agents to be immovable
-<<<<<<< HEAD
         for key, agent in state.agents.items():
             if key is not self.agent_key:
                 self.level_grid[agent[0]][agent[1]] = True
-=======
-        # for key, agent in state.agents.items():
-        #     #TODO: Agents can block pathing of box to goal in a narrow tunnel
-        #     self.level_grid[agent[0]][agent[1]] = True
->>>>>>> 8167fa8c96b2cdb51881f71cb2b6b3ca1c1eff9e
 
         # Setup value grid
         self.val_grid = np.arange(lvl_rows * lvl_cols).reshape(lvl_rows, lvl_cols)
