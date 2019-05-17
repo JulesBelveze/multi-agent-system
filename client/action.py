@@ -30,7 +30,7 @@ class ActionType:
 ActionType.Move = ActionType("Move")
 ActionType.Push = ActionType("Push")
 ActionType.Pull = ActionType("Pull")
-ActionType.Wait = ActionType("Wait")
+ActionType.NoOp = ActionType("NoOp")
 
 class Action:
     '''
@@ -42,6 +42,8 @@ class Action:
         self.box_dir = box_dir
         if self.action_type == ActionType.Move:
             self._repr = '{}({})'.format(self.action_type, self.agent_dir)
+        elif self.action_type == ActionType.NoOp:
+            self._repr = '{}'.format(self.action_type)
         else:
             self._repr = '{}({},{})'.format(self.action_type, self.agent_dir, self.box_dir)
 
@@ -52,7 +54,6 @@ class Action:
 ALL_ACTIONS = []
 
 # Populate
-ALL_ACTIONS.append(Action(ActionType.Wait, None, None))
 for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
     ALL_ACTIONS.append(Action(ActionType.Move, agent_dir, None))
 
@@ -60,3 +61,4 @@ for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
         for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
             if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
                 ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+ALL_ACTIONS.append(Action(ActionType.NoOp, None, None))

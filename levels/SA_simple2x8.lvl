@@ -4,14 +4,15 @@ hospital
 SA_simple2x8
 #colors
 red: 0, A
+blue: 1, B
 #initial
 ++++++++++
-+0 A     +
-+        +
++0A      +
++1B      +
 ++++++++++
 #goal
 ++++++++++
-+        +
 +       A+
++       B+
 ++++++++++
 #end
