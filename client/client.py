@@ -247,19 +247,18 @@ def main(args):
                     new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
                 new_solution = add_padding_actions(new_solution, nb_agents)
 
-                # Temporary hack: switching actions from previous goal to NoOp
-                hack_state = deepcopy(current_state)
-                hack_state.action = Action(ActionType.NoOp, None, None)
+                # removing the actions from previous goal and adding the ones from the new goal
                 for i in range(len(solution)):
-                    solution[i] = [hack_state] * len(solution[i])
+                    solution[i].clear()
                     solution[i].extend(new_solution[i])
+
+            else:
+                # removing the accomplished actions
+                for elt in solution:
+                    elt.pop(0)
 
                 msg_server_comment("Switching to action: " + printer.format(*action))
             msg_server_action(printer.format(*action))
-
-            # removing the completed actions
-            for elt in solution:
-                elt.pop(0)
 
             response = level_data.readline().rstrip()
             if 'false' in response:
