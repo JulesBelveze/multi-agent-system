@@ -75,7 +75,7 @@ class Agent:
 
                     iterations += 1
 
-                if iterations >= 16000:
+                if iterations >= 100000:
                     msg_server_err("Max iterations when looking for states exceeded!")
                     return None
 
