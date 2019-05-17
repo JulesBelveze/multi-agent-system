@@ -59,6 +59,12 @@ for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
 
     for action in (ActionType.Push, ActionType.Pull):
         for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
-            if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
-                ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+            if action is ActionType.Push:
+                # If not opposite directions
+                if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
+                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+            else:
+                # If not the same directions
+                if agent_dir is not box_dir:
+                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
 ALL_ACTIONS.append(Action(ActionType.NoOp, None, None))
