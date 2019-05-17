@@ -118,6 +118,7 @@ class Client:
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
                 if result is not None and len(result) > 0:
                     steps.extend(result)
+            msg_server_comment(steps)
             solutions.append(steps)
         return solutions
 
@@ -183,15 +184,52 @@ def check_action(actions, current_state: 'State', walls):
     return index_non_applicable, next_state, is_applicable
 
 
-def add_padding_actions(solution, nb_agents):
-    '''adding NoOp action for agent that have already satisfied their goals'''
-    max_len_sol = max(len(x) for x in solution)
-    for i in range(nb_agents):
-        padding_state = State(solution[i][-1])
-        padding_state.action = Action(ActionType.NoOp, None, None)
-        solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+def missing_goals(current_state, goal_state):
+    '''Return the index of the agents that haven't reached their goal and the
+    corresponding box, ex: {'0': ('A', (3, 9, 'red'))}'''
+    current_boxes = current_state.boxes
+    goal_boxes = goal_state.boxes
 
+    missing_boxes = []
+    for box_key in current_boxes:
+        for i, box in enumerate(current_boxes[box_key]):
+            if box not in goal_boxes[box_key]:
+                missing_boxes.append((box_key, i))
+
+    boxes_to_solve = {}
+
+    for box in missing_boxes:
+        for agent_key, agent_info in current_state.agents.items():
+            box_color = current_state.boxes[box[0]][box[1]][2]
+            agent_color = agent_info[2]
+            if box_color == agent_color:
+                boxes_to_solve[agent_key] = box
+
+    return boxes_to_solve
+
+
+def add_padding_actions(solution, nb_agents, current_state):
+    '''adding NoOp action for agent that have already satisfied their goals'''
+    max_len_sol = max(getLen(x) for x in solution)
+    for i in range(nb_agents):
+        try:
+            padding_state = State(solution[i][-1])
+        except:
+            padding_state = current_state
+
+        padding_state.action = Action(ActionType.NoOp, None, None)
+        try:
+            solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+        except:
+            solution[i] = [padding_state] * max_len_sol
     return solution
+
+
+def getLen(obj):
+    if obj is None:
+        return 0
+    else:
+        return len(obj)
 
 
 def main(args):
@@ -227,7 +265,7 @@ def main(args):
 
         nb_agents = len(solution)
 
-        solution = add_padding_actions(solution, nb_agents)
+        solution = add_padding_actions(solution, nb_agents, current_state)
         printer = ";".join(['{}'] * nb_agents)
 
         while len(solution[0]) > 0:
@@ -242,6 +280,7 @@ def main(args):
             if not is_applicable:
                 for key_agent in index_non_applicable:
                     action[int(key_agent)] = ActionType.NoOp
+                msg_server_comment("Switching to action: " + printer.format(*action))
 
                 new_solution = []
                 for j, agent in enumerate(starfish_client.agents):
@@ -249,20 +288,34 @@ def main(args):
                     starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                     starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
                     new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
-                new_solution = add_padding_actions(new_solution, nb_agents)
+                new_solution = add_padding_actions(new_solution, nb_agents, current_state)
 
                 # removing the actions from previous goal and adding the ones from the new goal
                 for i in range(len(solution)):
                     solution[i].clear()
                     solution[i].extend(new_solution[i])
-
             else:
-                # removing the accomplished actions
+                # removing the accomplished actions of each agent
                 for elt in solution:
                     elt.pop(0)
 
-                msg_server_comment("Switching to action: " + printer.format(*action))
             msg_server_action(printer.format(*action))
+
+            if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
+                goals_missing = missing_goals(current_state, starfish_client.goal_state)
+                new_solution = []
+                for j, agent in enumerate(starfish_client.agents):
+                    if agent.agent_key in goals_missing.keys():
+                        box_key = goals_missing[agent.agent_key]
+                        starfish_client.agents[j] = Agent(current_state, agent.agent_key)
+                        starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
+                        new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
+                    else:
+                        new_solution.append([])
+
+                new_solution = add_padding_actions(new_solution, nb_agents, current_state)
+                for i in range(len(solution)):
+                    solution[i].extend(new_solution[i])
 
             response = level_data.readline().rstrip()
             if 'false' in response:

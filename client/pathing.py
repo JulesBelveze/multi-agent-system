@@ -20,9 +20,15 @@ class Path():
                 self.level_grid[box[0]][box[1]] = True
 
         # Expect other agents to be immovable
+<<<<<<< HEAD
         for key, agent in state.agents.items():
             if key is not self.agent_key:
                 self.level_grid[agent[0]][agent[1]] = True
+=======
+        # for key, agent in state.agents.items():
+        #     #TODO: Agents can block pathing of box to goal in a narrow tunnel
+        #     self.level_grid[agent[0]][agent[1]] = True
+>>>>>>> 8167fa8c96b2cdb51881f71cb2b6b3ca1c1eff9e
 
         # Setup value grid
         self.val_grid = np.arange(lvl_rows * lvl_cols).reshape(lvl_rows, lvl_cols)
@@ -58,8 +64,9 @@ class Path():
                 uh_vicinity.append(self.val_grid[u][h_index+1])
             if self.val_grid[u][h_index-1] >= 1:# Cell West of NC
                 uh_vicinity.append(self.val_grid[u][h_index-1])
-            uh_avg = sum(uh_vicinity)/len(uh_vicinity)
+
             if len(uh_vicinity) > 1:
+                uh_avg = sum(uh_vicinity) / len(uh_vicinity)
                 self.val_grid[u][h_index] = uh_avg * 0.99
             else:
                 self.val_grid[u][h_index] = self.val_grid[v_index][h_index] * 0.99
@@ -76,8 +83,9 @@ class Path():
                 vr_vicinity.append(self.val_grid[v_index][r+1])
             if self.val_grid[v_index][r-1] >= 1:# Cell West of EC
                 vr_vicinity.append(self.val_grid[v_index][r-1])
-            vr_avg = sum(vr_vicinity)/len(vr_vicinity)
+
             if len(vr_vicinity) > 1:
+                vr_avg = sum(vr_vicinity) / len(vr_vicinity)
                 self.val_grid[v_index][r] = vr_avg * 0.99
             else:
                 self.val_grid[v_index][r] = self.val_grid[v_index][h_index] * 0.99
@@ -94,8 +102,9 @@ class Path():
                 dh_vicinity.append(self.val_grid[d][h_index+1])
             if self.val_grid[d][h_index-1] >= 1:# Cell West of SC
                 dh_vicinity.append(self.val_grid[d][h_index-1])
-            dh_avg = sum(dh_vicinity)/len(dh_vicinity)
+
             if len(dh_vicinity) > 1:
+                dh_avg = sum(dh_vicinity) / len(dh_vicinity)
                 self.val_grid[d][h_index] = dh_avg * 0.99
             else:
                 self.val_grid[d][h_index] = self.val_grid[v_index][h_index] * 0.99
@@ -112,8 +121,9 @@ class Path():
                 vl_vicinity.append(self.val_grid[v_index][l+1])
             if self.val_grid[v_index][l-1] >= 1:# Cell West of WC
                 vl_vicinity.append(self.val_grid[v_index][l-1])
-            vl_avg = sum(vl_vicinity)/len(vl_vicinity)
+
             if len(vl_vicinity) > 1:
+                vl_avg = sum(vl_vicinity) / len(vl_vicinity)
                 self.val_grid[v_index][l] = vl_avg * 0.99
             else:
                 self.val_grid[v_index][l] = self.val_grid[v_index][h_index] * 0.99
