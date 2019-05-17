@@ -55,14 +55,16 @@ class State:
                         child = self.create_child_state(action)
                         child.agents[agent_key] = new_agent
                 else:
-                    new_box = (box[0] + action.box_dir.d_row, box[1] + action.box_dir.d_col, box[2])
-
                     if action.action_type is ActionType.Push:
+                        new_box = (box[0] + action.box_dir.d_row, box[1] + action.box_dir.d_col, box[2])
+
                         if self.can_agent_push_box(new_agent, box) and self.is_free(walls, new_box[0], new_box[1]):
                             child = self.create_child_state(action)
                             child.agents[agent_key] = new_agent
                             child.boxes[box_key[0]][box_key[1]] = new_box
                     elif action.action_type is ActionType.Pull:
+                        new_box = (box[0] + action.box_dir.d_row * -1, box[1] + action.box_dir.d_col * -1, box[2])
+
                         if self.can_agent_pull_box(agent, new_box) and self.is_free(walls, new_agent[0], new_agent[1]):
                             child = self.create_child_state(action)
                             child.agents[agent_key] = new_agent
