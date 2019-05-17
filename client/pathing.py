@@ -4,9 +4,10 @@ import copy
 from message import msg_server_comment
 
 class Path():
-    def __init__(self):
+    def __init__(self, agent_key):
         self.val_grid = []
         self.level_grid = []
+        self.agent_key = agent_key
 
     def calc_route(self, walls, start_index, end_index, state: 'State'):
         lvl_rows = len(walls)
@@ -20,8 +21,8 @@ class Path():
 
         # Expect other agents to be immovable
         for key, agent in state.agents.items():
-            #TODO: Agents can block pathing of box to goal in a narrow tunnel
-            self.level_grid[agent[0]][agent[1]] = True
+            if key is not self.agent_key:
+                self.level_grid[agent[0]][agent[1]] = True
 
         # Setup value grid
         self.val_grid = np.arange(lvl_rows * lvl_cols).reshape(lvl_rows, lvl_cols)

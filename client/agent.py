@@ -11,7 +11,7 @@ class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.agent_key = agent_key
         self.current_state = State(initial_state)
-        self.path_finder = Path()
+        self.path_finder = Path(agent_key)
         self.navigator = Navigate()
 
     def assign_goal(self, goal_state: 'State', box_key):
