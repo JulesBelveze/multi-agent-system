@@ -118,6 +118,7 @@ class Client:
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
                 if result is not None and len(result) > 0:
                     steps.extend(result)
+            msg_server_comment(steps)
             solutions.append(steps)
         return solutions
 
@@ -217,7 +218,10 @@ def add_padding_actions(solution, nb_agents, current_state):
             padding_state = current_state
 
         padding_state.action = Action(ActionType.NoOp, None, None)
-        solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+        try:
+            solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
+        except:
+            solution[i] = [padding_state] * max_len_sol
     return solution
 
 
@@ -305,9 +309,10 @@ def main(args):
                         box_key = goals_missing[agent.agent_key]
                         starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                         starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                        new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
+                        new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
                     else:
                         new_solution.append([])
+
                 new_solution = add_padding_actions(new_solution, nb_agents, current_state)
                 for i in range(len(solution)):
                     solution[i].extend(new_solution[i])
