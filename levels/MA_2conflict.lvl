@@ -1,0 +1,20 @@
+#domain
+hospital
+#levelname
+MA_example
+#colors
+red: 0, A
+green: 1, B
+#initial
+++++++++++++
++          +
++1 B       +
++0A        +
+++++++++++++
+#goal
+++++++++++++
++         A+
++          +
++         B+
+++++++++++++
+#end

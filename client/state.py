@@ -7,7 +7,6 @@ class State:
         '''
         If duplicate is None: Creates an empty State.
         If duplicate is not None: Creates a copy of the duplicate state.
-
         The lists boxes, and goals are indexed from top-left of the level, row-major order (row, col).
                Col 0  Col 1  Col 2  Col 3
         Row 0: (0,0)  (0,1)  (0,2)  (0,3)  ...
@@ -15,7 +14,6 @@ class State:
         Row 2: (2,0)  (2,1)  (2,2)  (2,3)  ...
         ...
         The dictionaries of agents and boxes are of the form key: char, value:(row, col, color)
-
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
         self._hash = None
@@ -141,4 +139,3 @@ class State:
             lines.append(''.join(line))
         lines.append("Action: {}, Depth: {}".format(self.action, self.depth))
         return '\n'.join(lines)
-
