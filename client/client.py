@@ -118,7 +118,7 @@ class Client:
                 result = self.agents[key_agent].find_path_to_goal(self.walls)
                 if result is not None and len(result) > 0:
                     steps.extend(result)
-            msg_server_comment(steps)
+            #msg_server_comment(steps)
             solutions.append(steps)
         return solutions
 
