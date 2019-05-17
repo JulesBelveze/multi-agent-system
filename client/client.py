@@ -181,20 +181,13 @@ def check_action(actions, current_state: 'State', walls):
 
 def add_padding_actions(solution, nb_agents):
     '''adding NoOp action for agent that have already satisfied their goals'''
-    max_len_sol = max(getLen(x) for x in solution)
+    max_len_sol = max(len(x) for x in solution)
     for i in range(nb_agents):
         padding_state = State(solution[i][-1])
         padding_state.action = Action(ActionType.NoOp, None, None)
         solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
 
     return solution
-
-
-def getLen(obj):
-    if obj is None:
-        return 0
-    else:
-        return len(obj)
 
 
 def main(args):
@@ -232,14 +225,16 @@ def main(args):
 
         solution = add_padding_actions(solution, nb_agents)
         printer = ";".join(['{}'] * nb_agents)
-        i = 0
+
         while len(solution[0]) > 0:
-            state = [elt[i] for elt in solution]
+            # grabbing state for each agent
+            state = [elt[0] for elt in solution]
 
             action = [agent.action for agent in state]
             index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
             msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
 
+            # if there is a conflict between agents then we recompute a new goal for each agent
             if not is_applicable:
                 for key_agent in index_non_applicable:
                     action[int(key_agent)] = ActionType.NoOp
@@ -249,13 +244,12 @@ def main(args):
                     box_key = starfish_client.agents[j].box_key
                     starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                     starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-
                     new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
-
                 new_solution = add_padding_actions(new_solution, nb_agents)
+
+                # Temporary hack: switching actions from previous goal to NoOp
                 hack_state = deepcopy(current_state)
                 hack_state.action = Action(ActionType.NoOp, None, None)
-
                 for i in range(len(solution)):
                     solution[i] = [hack_state] * len(solution[i])
                     solution[i].extend(new_solution[i])
@@ -263,7 +257,10 @@ def main(args):
                 msg_server_comment("Switching to action: " + printer.format(*action))
             msg_server_action(printer.format(*action))
 
-            i += 1
+            # removing the completed actions
+            for elt in solution:
+                elt.pop(0)
+
             response = level_data.readline().rstrip()
             if 'false' in response:
                 msg_server_err("Server answered with error to the action " + printer.format(*action))
