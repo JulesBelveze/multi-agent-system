@@ -50,12 +50,20 @@ class Action:
     def __repr__(self):
         return self._repr
 
+
 # All possible directions
 ALL_DIRECTIONS = {}
 ALL_DIRECTIONS[Direction.N.name] = (Direction.N.d_row, Direction.N.d_col)
 ALL_DIRECTIONS[Direction.E.name] = (Direction.E.d_row, Direction.E.d_col)
 ALL_DIRECTIONS[Direction.S.name] = (Direction.S.d_row, Direction.S.d_col)
 ALL_DIRECTIONS[Direction.W.name] = (Direction.W.d_row, Direction.W.d_col)
+
+# Get direction class based on name of direction
+DIR_LOOKUP = {}
+DIR_LOOKUP[Direction.N.name] = Direction.N
+DIR_LOOKUP[Direction.E.name] = Direction.E
+DIR_LOOKUP[Direction.S.name] = Direction.S
+DIR_LOOKUP[Direction.W.name] = Direction.W
 
 # All possible actions
 ALL_ACTIONS = []
