@@ -65,6 +65,13 @@ DIR_LOOKUP[Direction.E.name] = Direction.E
 DIR_LOOKUP[Direction.S.name] = Direction.S
 DIR_LOOKUP[Direction.W.name] = Direction.W
 
+# Map opposite directions for quick lookup
+DIR_MIRROR = {}
+DIR_MIRROR[Direction.N.name] = Direction.S.name
+DIR_MIRROR[Direction.E.name] = Direction.W.name
+DIR_MIRROR[Direction.S.name] = Direction.N.name
+DIR_MIRROR[Direction.W.name] = Direction.E.name
+
 # All possible actions
 ALL_ACTIONS = []
 

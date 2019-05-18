@@ -1,3 +1,6 @@
+from operator import itemgetter
+from collections import Counter
+
 from message import msg_server_err
 from message import msg_server_comment
 from message import msg_server_action
@@ -6,11 +9,10 @@ from pathing import Path
 from pathing import Navigate
 from state import State
 
-from action import ALL_DIRECTIONS
+from action import ALL_DIRECTIONS, DIR_MIRROR
 
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
-        self.path_finder = Path(agent_key)
         self.navigator = Navigate()
         self.agent_key = agent_key
         self.current_state = State(initial_state)
@@ -18,6 +20,7 @@ class Agent:
     def assign_goal(self, goal_state: 'State', box_key):
         self.goal_state = goal_state
         self.box_key = box_key
+        self.path_finder = Path(self.agent_key, box_key)
 
     def has_goal(self):
         if self.goal_state is None or self.box_key is None:
@@ -58,15 +61,15 @@ class Agent:
 
             # First complete the sub goal - getting agent to box
             while not self.is_sub_goal_reached():
-                next_direction = self.pick_direction(agent, path)
+                dir_values = self.get_direction_values(agent, path)
 
-                child_state = self.current_state.get_child(walls, next_direction[0], self.agent_key, None, None)
+                child_state = self.current_state.get_child(walls, dir_values[0], self.agent_key, None, None)
                 if child_state is not None:
-                    final_actions.append(child_state)
                     self.current_state = child_state
                     agent = self.current_state.agents.get(self.agent_key)
                 else:
                     msg_server_err("Could not create child state from: {}".format(self.current_state))
+                    break
 
             # Find path to goal box
             path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
@@ -75,28 +78,60 @@ class Agent:
 
                 # Second complete main goal - move box to goal
                 while not self.is_goal_reached():
-                    next_agent_dir = self.pick_direction(agent, path)
-                    next_box_dir = self.pick_direction(c_box, path)
+                    agent_dir_values = self.get_direction_values(agent, path)
+                    box_dir_value = self.get_direction_values(c_box, path)[0]
 
-                    child_state = self.current_state.get_child(walls, next_agent_dir[0], self.agent_key, next_box_dir[0], self.box_key)
+                    # When a box should be pulled, the direction needs to be flipped because e.g. Pull(S,S) is invalid
+                    agent_dir_value = agent_dir_values[0]
+                    if agent_dir_value[1] > box_dir_value[1]:
+                        zero_count = Counter(elem[1] for elem in agent_dir_values)[0]
+                        if zero_count < 2:
+                            box_val = path[c_box[0]][c_box[1]]
+                            if DIR_MIRROR.get(agent_dir_values[1][0]) is not box_dir_value[0]:
+                                agent_dir_value = agent_dir_values[1]
+                                box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+                            elif DIR_MIRROR.get(agent_dir_values[2][0]) is not box_dir_value[0]:
+                                agent_dir_value = agent_dir_values[2]
+                                box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+                        else:
+                            box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+
+                    child_state = self.current_state.get_child(walls, agent_dir_value, self.agent_key, box_dir_value, self.box_key)
                     if child_state is not None:
-                        final_actions.append(child_state)
                         self.current_state = child_state
                         agent = self.current_state.agents.get(self.agent_key)
                         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
                     else:
                         msg_server_err("Could not create child state from: {}".format(self.current_state))
+                        break
+
+                final_actions = self.current_state.extract_plan()
 
         return final_actions
 
-    def pick_direction(self, current_pos, path):
-        current_max = ('', -1)
+    def get_direction_values(self, current_pos, path):
+        dir_values = []
+
+        for key, value in ALL_DIRECTIONS.items():
+            new_pos = (current_pos[0] + value[0], current_pos[1] + value[1])
+            new_val = path[new_pos[0]][new_pos[1]]
+            dir_values.append((key, new_val))
+        return sorted(dir_values, key=itemgetter(1), reverse=True)
+
+    def pick_direction(self, current_pos, path, is_agent):
+        # Keep track of the top 2 highest values
+        current_max = ('', 0)
+        second_max = ('', 0)
+
         for key, value in ALL_DIRECTIONS.items():
             new_pos = (current_pos[0] + value[0], current_pos[1] + value[1])
             new_val = path[new_pos[0]][new_pos[1]]
             if new_val > current_max[1]:
+                second_max = current_max
                 current_max = (key, new_val)
-        return current_max
+            elif new_val > second_max[1]:
+                second_max = (key, new_val)
+        return current_max if not is_agent else second_max
 
 #     def pick_h_target(self, agent, box, nav_step):
 #         return agent if nav_step == 0 else box

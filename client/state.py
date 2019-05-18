@@ -29,42 +29,66 @@ class State:
             self.depth = duplicate.depth
 
     def get_child(self, walls, agent_dir_key, agent_key, box_dir_key, box_key):
-        agent_dir = DIR_LOOKUP.get(agent_dir_key)
-        box_dir = DIR_LOOKUP.get(box_dir_key)
-        if agent_dir is None:
-            return None
+        agent_dir = None if agent_dir_key is None else DIR_LOOKUP.get(agent_dir_key[0])
+        box_dir = None if box_dir_key is None else DIR_LOOKUP.get(box_dir_key[0])
+        c_agent = self.agents.get(agent_key)
+        child = None
 
         # Find valid action based on supplied directions
         valid_action = None
         for action in ALL_ACTIONS:
             if action.agent_dir is agent_dir and action.box_dir is box_dir:
-                valid_action = action
-                break
+                n_agent = (c_agent[0] + action.agent_dir.d_row, c_agent[1] + action.agent_dir.d_col, c_agent[2])
 
-        # Update agent and box positions based on action
-        if valid_action is not None:
-            child = self.create_child_state(valid_action)
+                if action.action_type is ActionType.Move and box_dir is None:
+                    if self.is_free(walls, n_agent[0], n_agent[1]):
+                        child = self.create_child_state(action)
+                        child.agents[agent_key] = n_agent
+                        break
+                else:
+                    c_box = self.boxes.get(box_key[0])[box_key[1]]
+                    if action.action_type is ActionType.Push:
+                        n_box = (c_box[0] + action.box_dir.d_row, c_box[1] + action.box_dir.d_col, c_box[2])
 
-            # Update box pos
-            if box_dir is not None:
-                c_box = self.boxes.get(box_key[0])[box_key[1]]
-                n_box = c_box
-                if action.action_type is ActionType.Push:
-                    n_box = (c_box[0] + action.box_dir.d_row, c_box[1] + action.box_dir.d_col, c_box[2])
+                        if self.can_agent_push_box(n_agent, c_box) and self.is_free(walls, n_box[0], n_box[1]):
+                            child = self.create_child_state(action)
+                            child.agents[agent_key] = n_agent
+                            child.boxes[box_key[0]][box_key[1]] = n_box
+                            break
+                    elif action.action_type is ActionType.Pull:
+                        n_box = (c_box[0] + action.box_dir.d_row * -1, c_box[1] + action.box_dir.d_col * -1, c_box[2])
 
-                elif action.action_type is ActionType.Pull:
-                    n_box = (c_box[0] + action.box_dir.d_row * -1, c_box[1] + action.box_dir.d_col * -1, c_box[2])
+                        if self.can_agent_pull_box(c_agent, n_box) and self.is_free(walls, n_agent[0], n_agent[1]):
+                            child = self.create_child_state(action)
+                            child.agents[agent_key] = n_agent
+                            child.boxes[box_key[0]][box_key[1]] = n_box
+                            break
 
-                child.boxes[box_key[0]][box_key[1]] = n_box
+        return child
+        # # Update agent and box positions based on action
+        # if valid_action is not None:
+        #     child = self.create_child_state(valid_action)
 
-            # Update agent pos
-            c_agent = self.agents.get(agent_key)
-            n_agent = (c_agent[0] + action.agent_dir.d_row, c_agent[1] + action.agent_dir.d_col, c_agent[2])
-            if self.is_free(walls, n_agent[0], n_agent[1]):
-                child.agents[agent_key] = n_agent
+        #     # Update box pos
+        #     if box_dir is not None:
+        #         c_box = self.boxes.get(box_key[0])[box_key[1]]
+        #         n_box = c_box
+        #         if action.action_type is ActionType.Push:
+        #             n_box = (c_box[0] + action.box_dir.d_row, c_box[1] + action.box_dir.d_col, c_box[2])
 
-            return child
-        return None
+        #         elif action.action_type is ActionType.Pull:
+        #             n_box = (c_box[0] + action.box_dir.d_row * -1, c_box[1] + action.box_dir.d_col * -1, c_box[2])
+
+        #         child.boxes[box_key[0]][box_key[1]] = n_box
+
+        #     # Update agent pos
+        #     c_agent = self.agents.get(agent_key)
+        #     n_agent = (c_agent[0] + action.agent_dir.d_row, c_agent[1] + action.agent_dir.d_col, c_agent[2])
+        #     if self.is_free(walls, n_agent[0], n_agent[1]):
+        #         child.agents[agent_key] = n_agent
+
+        #     return child
+        # return None
 
     def get_children(self, walls, agent_key, box_key):
         '''
