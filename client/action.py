@@ -50,6 +50,13 @@ class Action:
     def __repr__(self):
         return self._repr
 
+# All possible directions
+ALL_DIRECTIONS = {}
+ALL_DIRECTIONS[Direction.N.name] = (Direction.N.d_row, Direction.N.d_col)
+ALL_DIRECTIONS[Direction.E.name] = (Direction.E.d_row, Direction.E.d_col)
+ALL_DIRECTIONS[Direction.S.name] = (Direction.S.d_row, Direction.S.d_col)
+ALL_DIRECTIONS[Direction.W.name] = (Direction.W.d_row, Direction.W.d_col)
+
 # All possible actions
 ALL_ACTIONS = []
 
