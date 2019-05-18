@@ -30,7 +30,7 @@ class Path():
 
         # Set value of destination and start cells
         self.val_grid[end_index[0]][end_index[1]] = 1000
-        self.val_grid[start_index[0]][start_index[1]] = -1
+        self.val_grid[start_index[0]][start_index[1]] = 1
 
         # Map cells
         self.calc_cells(end_index[0], end_index[1])
