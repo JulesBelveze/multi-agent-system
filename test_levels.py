@@ -62,7 +62,7 @@ def main(args):
     else:
         print("Did not supply level or directory arguments. Use '-h' for help")
 
-
+#TODO: Program will not continue if a gui is opened, until it is closed.
 if __name__ == "__main__":
     # Process arguments
     parser = ArgumentParser(description='Mass testing utility for Starfish')
