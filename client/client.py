@@ -113,13 +113,15 @@ class Client:
                 _, _, box_color = value
                 key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
                 key_agent = int(key_agent)
+                if self.agents[key_agent].has_goal():
+                    print("AGENT HAS ALREADY A GOAL")
+                else:
+                    self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
+                    result = self.agents[key_agent].find_path_to_goal(self.walls)
+                    if result is not None and len(result) > 0:
+                        steps.extend(result)
+                    solutions.append(steps)
 
-                self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
-                result = self.agents[key_agent].find_path_to_goal(self.walls)
-                if result is not None and len(result) > 0:
-                    steps.extend(result)
-            #msg_server_comment(steps)
-            solutions.append(steps)
         return solutions
 
 
@@ -153,7 +155,6 @@ def check_action(actions, current_state: 'State', walls):
             if action.action_type is ActionType.Move:
                 if next_state.is_free(walls, new_agent_row, new_agent_col):
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
-                    # msg_server_comment(next_state.agents)
                 else:
                     index_non_applicable.append(i)
                     is_applicable = False
@@ -274,6 +275,7 @@ def main(args):
             state = [elt[0] for elt in solution]
 
             action = [agent.action for agent in state]
+
             index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
             msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
 

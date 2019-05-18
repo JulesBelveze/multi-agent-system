@@ -19,7 +19,10 @@ class Agent:
         self.box_key = box_key
 
     def has_goal(self):
-        if self.goal_state is None or self.box_key is None:
+        try:
+            if self.goal_state is None or self.box_key is None:
+                return False
+        except AttributeError:
             return False
         return True
 
