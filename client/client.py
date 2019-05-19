@@ -122,6 +122,12 @@ class Client:
                         steps.extend(result)
                     solutions.append(steps)
 
+        # handling the fact that some agents might have no goal
+        if len(solutions) != len(self.agents):
+            for i, agent in enumerate(self.agents):
+                if not agent.has_goal():
+                    solutions.insert(i, [])
+
         return solutions
 
 
