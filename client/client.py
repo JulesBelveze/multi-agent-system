@@ -143,6 +143,10 @@ def check_action(actions, current_state: 'State', walls):
     index_non_applicable = []
     is_applicable = True
 
+    # defining a server-like state where we'll create fictive agent to keep track
+    # of the previous agent position
+    server_state = State(current_state)
+
     for i, action in enumerate(actions):
         i = str(i)
         row, col, color = current_state.agents[i]
@@ -153,7 +157,9 @@ def check_action(actions, current_state: 'State', walls):
             new_agent_col = col + action.agent_dir.d_col
 
             if action.action_type is ActionType.Move:
-                if next_state.is_free(walls, new_agent_row, new_agent_col):
+                if server_state.is_free(walls, new_agent_row, new_agent_col):
+                    server_state.agents[i+i] = (row, col, color)
+                    server_state.agents[i] = (new_agent_row, new_agent_col, color)
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
                 else:
                     index_non_applicable.append(i)
@@ -162,7 +168,10 @@ def check_action(actions, current_state: 'State', walls):
                 box_key = get_box_key_by_position(new_agent_row, new_agent_col, next_state)
                 new_box_row = new_agent_row + action.box_dir.d_row
                 new_box_col = new_agent_col + action.box_dir.d_col
-                if next_state.is_free(walls, new_box_row, new_box_col):
+                if server_state.is_free(walls, new_box_row, new_box_col):
+                    server_state.agents[i+i] = (row, col, color)
+                    server_state.agents[i] = (new_agent_row, new_agent_col, color)
+                    server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
                     next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 else:
@@ -176,7 +185,9 @@ def check_action(actions, current_state: 'State', walls):
                 new_box_row = box_row + action.box_dir.d_row * -1
                 new_box_col = box_col + action.box_dir.d_col * -1
 
-                if next_state.is_free(walls, new_agent_row, new_agent_col):
+                if server_state.is_free(walls, new_agent_row, new_agent_col):
+                    server_state.agents[i] = (new_agent_row, new_agent_col, color)
+                    server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
                     next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 else:
