@@ -158,7 +158,7 @@ def check_action(actions, current_state: 'State', walls):
 
             if action.action_type is ActionType.Move:
                 if server_state.is_free(walls, new_agent_row, new_agent_col):
-                    server_state.agents[i+i] = (row, col, color)
+                    server_state.agents[i + i] = (row, col, color)
                     server_state.agents[i] = (new_agent_row, new_agent_col, color)
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
                 else:
@@ -169,7 +169,7 @@ def check_action(actions, current_state: 'State', walls):
                 new_box_row = new_agent_row + action.box_dir.d_row
                 new_box_col = new_agent_col + action.box_dir.d_col
                 if server_state.is_free(walls, new_box_row, new_box_col):
-                    server_state.agents[i+i] = (row, col, color)
+                    server_state.agents[i + i] = (row, col, color)
                     server_state.agents[i] = (new_agent_row, new_agent_col, color)
                     server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                     next_state.agents[i] = (new_agent_row, new_agent_col, color)
@@ -204,10 +204,13 @@ def missing_goals(current_state, goal_state):
     goal_boxes = goal_state.boxes
 
     missing_boxes = []
-    for box_key in current_boxes:
-        for i, box in enumerate(current_boxes[box_key]):
-            if box not in goal_boxes[box_key]:
-                missing_boxes.append((box_key, i))
+    for box_key in goal_boxes:
+        for i, box in enumerate(goal_boxes[box_key]):
+            try:
+                if box not in current_boxes[box_key]:
+                    missing_boxes.append((box_key, i))
+            except KeyError:
+                pass
 
     boxes_to_solve = {}
 

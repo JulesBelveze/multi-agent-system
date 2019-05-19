@@ -29,10 +29,23 @@ class Agent:
     def pick_h_target(self, agent, box, nav_step):
         return agent if nav_step == 0 else box
 
+    def find_a_goal_cell(self):
+        '''Useful if we don't have the same number of boxes and goals'''
+        try:
+            return self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        except IndexError:
+            goal_boxes = self.goal_state.boxes.get(self.box_key[0])
+            curr_boxes = self.current_state.boxes.get(self.box_key[0])
+            for goal_box in goal_boxes:
+                if goal_box in curr_boxes:
+                    continue
+                else:
+                    return goal_box
+
     def find_path_to_goal(self, walls):
         agent = self.current_state.agents.get(self.agent_key)
         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
-        g_box = self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        g_box = self.find_a_goal_cell()
         final_plan = []
 
         # Find path to current box
