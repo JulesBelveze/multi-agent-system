@@ -2,6 +2,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from copy import deepcopy
 import numpy as np
+import random
 import sys
 import smt
 
@@ -113,8 +114,10 @@ class Client:
                 _, _, box_color = value
                 key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
                 key_agent = int(key_agent)
+
+                # assigning a goal to the agent if he doesn't have any
                 if self.agents[key_agent].has_goal():
-                    print("AGENT HAS ALREADY A GOAL")
+                    msg_server_comment("Agent {} has already a goal".format(key_agent))
                 else:
                     self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
                     result = self.agents[key_agent].find_path_to_goal(self.walls)
@@ -122,18 +125,22 @@ class Client:
                         steps.extend(result)
                     solutions.append(steps)
 
-        # handling the fact that some agents might have no goal
+        # handling the fact that some agents might have no goal by adding an empty
+        # list to their corresponding position that will be padded with NoOp actions
         if len(solutions) != len(self.agents):
             for i, agent in enumerate(self.agents):
                 if not agent.has_goal():
                     solutions.insert(i, [])
+
+        # if all agents have an empty set of actions then the level is unsolvable
+        if sum([len(sol) for sol in solutions]) == 0:
+            return None
 
         return solutions
 
 
 def get_box_key_by_position(row, col, state: 'State'):
     '''Return the key of a box at a given position'''
-    # msg_server_comment(state.boxes)
     for key, boxes in state.boxes.items():
         for i, box in enumerate(boxes):
             row_box, col_box, _ = box
@@ -219,8 +226,7 @@ def missing_goals(current_state, goal_state):
                 pass
 
     boxes_to_solve = {}
-
-    for box in missing_boxes:
+    for box in reversed(missing_boxes):
         for agent_key, agent_info in current_state.agents.items():
             box_color = current_state.boxes[box[0]][box[1]][2]
             agent_color = agent_info[2]
@@ -236,14 +242,12 @@ def add_padding_actions(solution, nb_agents, current_state):
     for i in range(nb_agents):
         try:
             padding_state = State(solution[i][-1])
-        except:
-            padding_state = current_state
-
-        padding_state.action = Action(ActionType.NoOp, None, None)
-        try:
             solution[i] += [padding_state] * (max_len_sol - len(solution[i]))
         except:
+            padding_state = current_state
             solution[i] = [padding_state] * max_len_sol
+
+        padding_state.action = Action(ActionType.NoOp, None, None)
     return solution
 
 
@@ -307,10 +311,13 @@ def main(args):
 
                 new_solution = []
                 for j, agent in enumerate(starfish_client.agents):
-                    box_key = starfish_client.agents[j].box_key
-                    starfish_client.agents[j] = Agent(current_state, agent.agent_key)
-                    starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
+                    if agent.has_goal():
+                        box_key = starfish_client.agents[j].box_key
+                        starfish_client.agents[j] = Agent(current_state, agent.agent_key)
+                        starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
+                        new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
+                    else:
+                        new_solution.append([])
                 new_solution = add_padding_actions(new_solution, nb_agents, current_state)
 
                 # removing the actions from previous goal and adding the ones from the new goal
@@ -326,6 +333,7 @@ def main(args):
 
             if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
                 goals_missing = missing_goals(current_state, starfish_client.goal_state)
+                msg_server_comment(goals_missing)
                 new_solution = []
                 for j, agent in enumerate(starfish_client.agents):
                     if agent.agent_key in goals_missing.keys():
