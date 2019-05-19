@@ -9,7 +9,7 @@ from pathing import Path
 from pathing import Navigate
 from state import State
 
-from action import ALL_DIRECTIONS, DIR_MIRROR
+from action import ALL_DIRECTIONS, DIR_MIRROR, ActionType
 
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
@@ -75,26 +75,39 @@ class Agent:
             path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]), self.current_state)
             if path is not None:
                 msg_server_comment("Found path from box {} to goal box".format(self.box_key))
+                flip_transition = False
 
                 # Second complete main goal - move box to goal
                 while not self.is_goal_reached():
                     agent_dir_values = self.get_direction_values(agent, path)
                     box_dir_value = self.get_direction_values(c_box, path)[0]
 
-                    # When a box should be pulled, the direction needs to be flipped because e.g. Pull(S,S) is invalid
                     agent_dir_value = agent_dir_values[0]
-                    if agent_dir_value[1] > box_dir_value[1]:
+
+                    # When a box should be pulled, the direction needs to be mirrored because e.g. Pull(S,S) is invalid
+                    if agent_dir_value[1] > box_dir_value[1] and not flip_transition:
+                        # Check for possibility of flipping to push
                         zero_count = Counter(elem[1] for elem in agent_dir_values)[0]
                         if zero_count < 2:
-                            box_val = path[c_box[0]][c_box[1]]
-                            if DIR_MIRROR.get(agent_dir_values[1][0]) is not box_dir_value[0]:
-                                agent_dir_value = agent_dir_values[1]
-                                box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
-                            elif DIR_MIRROR.get(agent_dir_values[2][0]) is not box_dir_value[0]:
-                                agent_dir_value = agent_dir_values[2]
-                                box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
-                        else:
-                            box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+                            # Make sure the chosen direction will not be in the direction of the box
+                            for i in range(1, len(agent_dir_values)):
+                                item = agent_dir_values[i]
+                                if DIR_MIRROR.get(item[0]) is not box_dir_value[0]:
+                                    agent_dir_value = item
+                                    flip_transition = True
+                                    break
+                        box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+                    else:
+                        if flip_transition:
+                            flip_transition = False
+
+                        # Force the agent's direction to current pos of box, making it push the box
+                        if agent_dir_value[2][0] != c_box[0] and agent_dir_value[2][0] != c_box[1]:
+                            for i in range(1, len(agent_dir_values)):
+                                item = agent_dir_values[i]
+                                if item[2][0] == c_box[0] and item[2][1] == c_box[1]:
+                                    agent_dir_value = item
+                                    break
 
                     child_state = self.current_state.get_child(walls, agent_dir_value, self.agent_key, box_dir_value, self.box_key)
                     if child_state is not None:
@@ -109,29 +122,15 @@ class Agent:
 
         return final_actions
 
+    # Returns a tuple in the form: Direction name, grid value, new_pos(x,y)
     def get_direction_values(self, current_pos, path):
         dir_values = []
 
         for key, value in ALL_DIRECTIONS.items():
             new_pos = (current_pos[0] + value[0], current_pos[1] + value[1])
             new_val = path[new_pos[0]][new_pos[1]]
-            dir_values.append((key, new_val))
+            dir_values.append((key, new_val, new_pos))
         return sorted(dir_values, key=itemgetter(1), reverse=True)
-
-    def pick_direction(self, current_pos, path, is_agent):
-        # Keep track of the top 2 highest values
-        current_max = ('', 0)
-        second_max = ('', 0)
-
-        for key, value in ALL_DIRECTIONS.items():
-            new_pos = (current_pos[0] + value[0], current_pos[1] + value[1])
-            new_val = path[new_pos[0]][new_pos[1]]
-            if new_val > current_max[1]:
-                second_max = current_max
-                current_max = (key, new_val)
-            elif new_val > second_max[1]:
-                second_max = (key, new_val)
-        return current_max if not is_agent else second_max
 
 #     def pick_h_target(self, agent, box, nav_step):
 #         return agent if nav_step == 0 else box
