@@ -2,6 +2,9 @@ import numpy as np
 import heapq
 import copy
 from message import msg_server_comment
+import sys
+
+sys.setrecursionlimit(2500)
 
 class Path():
     def __init__(self, agent_key, box_key):

@@ -80,10 +80,11 @@ class Agent:
                 # Second complete main goal - move box to goal
                 while not self.is_goal_reached():
                     agent_dir_values = self.get_direction_values(agent, path)
-                    box_dir_value = self.get_direction_values(c_box, path)[0]
-
                     agent_dir_value = agent_dir_values[0]
+                    box_dir_values = self.get_direction_values(c_box, path)
+                    box_dir_value = box_dir_values[0]
 
+                    #msg_server_comment("{}, {}".format(path[agent[0]][agent[1]], path[c_box[0]][c_box[1]]))
                     # When a box should be pulled, the direction needs to be mirrored because e.g. Pull(S,S) is invalid
                     if agent_dir_value[1] > box_dir_value[1] and not flip_transition:
                         # Check for possibility of flipping to push
@@ -95,6 +96,14 @@ class Agent:
                                 if DIR_MIRROR.get(item[0]) is not box_dir_value[0]:
                                     agent_dir_value = item
                                     flip_transition = True
+
+                                    # Make sure box direction is to agent's current pos
+                                    if box_dir_value[2][0] != agent_dir_value[2][0] and box_dir_value[2][1] != agent_dir_value[2][1]:
+                                        for j in range(1, len(box_dir_values)):
+                                            box = box_dir_values[j]
+                                            if box[2][0] == agent[0] and box[2][1] == agent[1]:
+                                                box_dir_value = box
+                                                break
                                     break
                         box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
                     else:
@@ -102,7 +111,7 @@ class Agent:
                             flip_transition = False
 
                         # Force the agent's direction to current pos of box, making it push the box
-                        if agent_dir_value[2][0] != c_box[0] and agent_dir_value[2][0] != c_box[1]:
+                        if agent_dir_value[2][0] != c_box[0] and agent_dir_value[2][1] != c_box[1]:
                             for i in range(1, len(agent_dir_values)):
                                 item = agent_dir_values[i]
                                 if item[2][0] == c_box[0] and item[2][1] == c_box[1]:
@@ -131,69 +140,3 @@ class Agent:
             new_val = path[new_pos[0]][new_pos[1]]
             dir_values.append((key, new_val, new_pos))
         return sorted(dir_values, key=itemgetter(1), reverse=True)
-
-#     def pick_h_target(self, agent, box, nav_step):
-#         return agent if nav_step == 0 else box
-
-#     def find_path_to_goal(self, walls):
-#         agent = self.current_state.agents.get(self.agent_key)
-#         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
-#         g_box = self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
-#         final_plan = []
-
-#         # Find path to current box
-#         path = self.path_finder.calc_route(walls, (agent[0], agent[1]), (c_box[0], c_box[1]), self.current_state)
-#         if path is not None:
-#             msg_server_comment("Found path from agent {} to box {}".format(self.agent_key, self.box_key))
-
-#             iterations = 0
-#             h_target = agent
-#             for nav_step in range(0, 2):
-#                 self.navigator.add_to_frontier(self.current_state, h_target, path)
-#                 while iterations < 16000:
-#                     if self.navigator.frontier_count() == 0:
-#                         msg_server_err("Failed to navigate agent {} to box {}!".format(self.agent_key, self.box_key))
-#                         return None
-
-#                     current = self.navigator.get_from_frontier()
-#                     agent = current.agents.get(self.agent_key)
-
-#                     # Goal checking
-#                     if nav_step == 0:
-#                         is_sub_goal = abs(c_box[0] - agent[0]) + abs(c_box[1] - agent[1]) == 1
-#                         h_target = agent
-#                     else:
-#                         c_box = current.boxes.get(self.box_key[0])[self.box_key[1]]
-#                         is_sub_goal = path[c_box[0]][c_box[1]] - path[g_box[0]][g_box[1]] == 0
-
-#                     if is_sub_goal:
-#                         is_sub_goal = False
-#                         final_plan = current.extract_plan()
-#                         self.current_state = current
-#                         self.navigator = Navigate()
-#                         iterations = 0
-#                         break
-
-#                     # Explore child states
-#                     self.navigator.add_to_explored(current)
-#                     for child_state in current.get_children(walls, self.agent_key, self.box_key):
-#                         if not self.navigator.is_explored(child_state) and not self.navigator.in_frontier(child_state):
-#                             if nav_step > 0:
-#                                 h_target = child_state.boxes.get(self.box_key[0])[self.box_key[1]]
-#                             self.navigator.add_to_frontier(child_state, h_target, path)
-
-#                     iterations += 1
-
-#                 if iterations >= 100000:
-#                     msg_server_err("Max iterations when looking for states exceeded!")
-#                     return None
-
-#                 if nav_step == 0:
-#                     path = self.path_finder.calc_route(walls, (c_box[0], c_box[1]), (g_box[0], g_box[1]),
-#                                                        self.current_state)
-#                     if path is None:
-#                         return None
-
-#                     msg_server_comment("Found path from box {} to goal box".format(self.box_key))
-
-#         return final_plan
