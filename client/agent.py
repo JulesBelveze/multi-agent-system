@@ -42,6 +42,11 @@ class Agent:
                 else:
                     return goal_box
 
+    def get_path(self, walls):
+        agent = self.current_state.agents.get(self.agent_key)
+        c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        return self.path_finder.calc_route(walls, (agent[0], agent[1]), (c_box[0], c_box[1]), self.current_state)
+
     def find_path_to_goal(self, walls):
         agent = self.current_state.agents.get(self.agent_key)
         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
