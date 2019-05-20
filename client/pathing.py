@@ -142,7 +142,7 @@ class Path():
         self.val_grid_frontier_v.append(v_index)
         self.val_grid_frontier_h.append(h_index)
         while True:
-            self.calc_cells(self.val_grid_frontier_v[0],self.val_grid_frontier_h[0],verbose)
+            self.calc_cells(self.val_grid_frontier_v[0],self.val_grid_frontier_h[0])
             self.val_grid_frontier_v.pop(0)
             self.val_grid_frontier_h.pop(0)
             if len(self.val_grid_frontier_v) == 0:
