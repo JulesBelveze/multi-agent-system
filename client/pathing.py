@@ -8,6 +8,8 @@ class Path():
         self.val_grid = []
         self.level_grid = []
         self.agent_key = agent_key
+        self.val_grid_frontier_v = [] 
+        self.val_grid_frontier_h = [] 
 
     def calc_route(self, walls, start_index, end_index, state: 'State'):
         lvl_rows = len(walls)
@@ -33,7 +35,7 @@ class Path():
         self.val_grid[start_index[0]][start_index[1]] = -1
 
         # Map cells
-        self.calc_cells(end_index[0], end_index[1])
+        self.calc_map(end_index[0], end_index[1])
 
         if self.is_path_found(start_index):
             return self.val_grid
@@ -123,31 +125,28 @@ class Path():
                 self.val_grid[v_index][l] = self.val_grid[v_index][h_index] * 0.99
             self.level_grid[v_index][l] = True
             vl = True
-        if uh == True and vr == True:
-            if uh == True: self.calc_cells(u,h_index);uh = False
-            if vr == True: self.calc_cells(v_index,r);vr = False
-            if dh == True: self.calc_cells(d,h_index);dh = False
-            if vl == True: self.calc_cells(v_index,l);vl = False
-        elif uh == True and vl == True:
-            if uh == True: self.calc_cells(u,h_index,);uh = False
-            if vl == True: self.calc_cells(v_index,l,);vl = False
-            if vr == True: self.calc_cells(v_index,r,);vr = False
-            if dh == True: self.calc_cells(d,h_index,);dh = False
-        elif dh == True and vl == True:
-            if dh == True: self.calc_cells(d,h_index);dh = False
-            if vl == True: self.calc_cells(v_index,l);vl = False
-            if uh == True: self.calc_cells(u,h_index);uh = False
-            if vr == True: self.calc_cells(v_index,r);vr = False
-        elif dh == True and vr == True:
-            if dh == True: self.calc_cells(d,h_index);dh = False
-            if vr == True: self.calc_cells(v_index,r);vr = False
-            if vl == True: self.calc_cells(v_index,l);vl = False
-            if uh == True: self.calc_cells(u,h_index);uh = False
-        else:
-            if dh == True: self.calc_cells(d,h_index);dh = False
-            if vr == True: self.calc_cells(v_index,r);vr = False
-            if vl == True: self.calc_cells(v_index,l);vl = False
-            if uh == True: self.calc_cells(u,h_index);uh = False
+        if uh == True:
+            self.val_grid_frontier_v.append([u][0])
+            self.val_grid_frontier_h.append([h_index][0])
+        if dh == True:
+            self.val_grid_frontier_v.append([d][0])
+            self.val_grid_frontier_h.append([h_index][0])
+        if vr == True:
+            self.val_grid_frontier_v.append([v_index][0])
+            self.val_grid_frontier_h.append([r][0])
+        if vl == True:
+            self.val_grid_frontier_v.append([v_index][0])
+            self.val_grid_frontier_h.append([l][0])
+
+    def calc_map(self,v_index,h_index,verbose=False):
+        self.val_grid_frontier_v.append(v_index)
+        self.val_grid_frontier_h.append(h_index)
+        while True:
+            self.calc_cells(self.val_grid_frontier_v[0],self.val_grid_frontier_h[0])
+            self.val_grid_frontier_v.pop(0)
+            self.val_grid_frontier_h.pop(0)
+            if len(self.val_grid_frontier_v) == 0:
+                break        
 
     def is_path_found(self, start_index):
         # Check neighbouring cells for values greater than 0, which means path was found
@@ -159,7 +158,6 @@ class Path():
             return True
         elif self.val_grid[start_index[0]][start_index[1] + 1] != 0:
             return True
-
         return False
 
     def print_path(self):
