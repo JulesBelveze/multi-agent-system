@@ -118,18 +118,23 @@ class Client:
             for value in values:
                 # assigning goals to an agent for all boxes in a colour
                 _, _, box_color = value
-                key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
-                key_agent = int(key_agent)
 
-                # assigning a goal to the agent if he doesn't have any
-                if self.agents[key_agent].has_goal():
-                    msg_server_comment("Agent {} has already a goal".format(key_agent))
-                else:
-                    self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
-                    result = self.agents[key_agent].find_path_to_goal(self.walls)
-                    if result is not None and len(result) > 0:
-                        steps.extend(result)
-                    solutions.append(steps)
+                # catch exception for box without agent of the same color
+                try:
+                    key_agent = [x for x, y in self.initial_state.agents.items() if y[2] == box_color][0]
+                    key_agent = int(key_agent)
+
+                    # assigning a goal to the agent if he doesn't have any
+                    if self.agents[key_agent].has_goal():
+                        msg_server_comment("Agent {} has already a goal".format(key_agent))
+                    else:
+                        self.agents[key_agent].assign_goal(self.goal_state, (char, values.index(value)))
+                        result = self.agents[key_agent].find_path_to_goal(self.walls)
+                        if result is not None and len(result) > 0:
+                            steps.extend(result)
+                        solutions.append(steps)
+                except IndexError:
+                    continue
 
 
         # handling the fact that some agents might have no goal by adding an empty
@@ -203,7 +208,7 @@ def main(args):
                     box_key = starfish_client.agents[j].box_key
                     starfish_client.agents[j] = Agent(current_state, agent.agent_key)
                     starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(deepcopy(starfish_client).agents[j].find_path_to_goal(walls))
+                    new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
                 else:
                     new_solution.append([])
             new_solution = add_padding_actions(new_solution, nb_agents, current_state)
@@ -219,6 +224,8 @@ def main(args):
 
         msg_server_action(printer.format(*action))
 
+        # checking if goal state is reached once the action list is empty and
+        # checking reassigning the missing goals if it is not goal state
         if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
             goals_missing = missing_goals(current_state, starfish_client.goal_state)
             msg_server_comment(goals_missing)
@@ -232,6 +239,8 @@ def main(args):
                 else:
                     new_solution.append([])
 
+            # goal state not reached but the action list is empty, meaning that
+            # the agents are somehow blocked
             if sum([getLen(sol) for sol in new_solution]) == 0:
                 for i, agent in enumerate(starfish_client.agents):
                     if not agent.has_goal():
