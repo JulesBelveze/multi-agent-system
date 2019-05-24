@@ -89,7 +89,7 @@ class Agent:
                     self.current_state = child_state
                     agent = self.current_state.agents.get(self.agent_key)
                 else:
-                    msg_server_err("Could not create child state from: {}".format(self.current_state))
+                    msg_server_err("FAILED to create child state from: {}, {}".format(agent, dir_values[0]))
                     break
 
             # Find path to goal box
@@ -105,9 +105,14 @@ class Agent:
                     box_dir_values = self.get_direction_values(c_box, path)
                     box_dir_value = box_dir_values[0]
 
-                    #msg_server_comment("{}, {}".format(path[agent[0]][agent[1]], path[c_box[0]][c_box[1]]))
+                    # When an agent needs to pull box towards goal, make sure agent dir is not towards box
+                    is_agent_on_goal = path[agent[0]][agent[1]] == path[g_box[0]][g_box[1]]
+                    if is_agent_on_goal:
+                        if agent_dir_value[2][0] == c_box[0] and agent_dir_value[2][1] == c_box[1]:
+                            agent_dir_value = agent_dir_values[1]
+
                     # When a box should be pulled, the direction needs to be mirrored because e.g. Pull(S,S) is invalid
-                    if agent_dir_value[1] > box_dir_value[1] and not flip_transition:
+                    if agent_dir_value[1] > box_dir_value[1] and not flip_transition or is_agent_on_goal:
                         # Check for possibility of flipping to push
                         zero_count = Counter(elem[1] for elem in agent_dir_values)[0]
                         if zero_count < 2:
@@ -126,6 +131,12 @@ class Agent:
                                                 box_dir_value = box
                                                 break
                                     break
+                        else:
+                            # Make sure the box direction is to agent's current pos
+                            if box_dir_value[2][0] != agent[0] and box_dir_value[2][1] != agent[1]:
+                                box_dir_value = box_dir_values[1]
+
+                        # Mirror box direction for server to interpret
                         box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
                     else:
                         if flip_transition:
@@ -145,7 +156,7 @@ class Agent:
                         agent = self.current_state.agents.get(self.agent_key)
                         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
                     else:
-                        msg_server_err("Could not create child state from: {}".format(self.current_state))
+                        msg_server_err("FAILED to create child state from: Agent {} [{}], Box  {} [{}]".format(agent, agent_dir_value, c_box, box_dir_value))
                         break
 
                 final_actions = self.current_state.extract_plan()
