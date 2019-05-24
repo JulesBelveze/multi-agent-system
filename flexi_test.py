@@ -3,8 +3,8 @@ from subprocess import Popen, PIPE, STDOUT
 from argparse import ArgumentParser
 from pathlib import Path
 
-command = "java -jar server.jar -c \"py client/client.py\" -l \"{}\""
-gui_command = "java -jar server.jar -c \"py client/client.py\" -l \"{}\" -g"
+command = "java -jar server.jar -c \"py client/client.py\" -l \"{}\" -t {}"
+gui_command = "java -jar server.jar -c \"py client/client.py\" -l \"{}\" -g -t {}"
 
 def scan_dir_for_levels(dir_name, recursive_dir):
     levels = []
@@ -24,7 +24,7 @@ def format_log_name(level_path):
     name = level_path.replace("levels", "", 1).replace(slash, "-").replace(".lvl","")
     return "[{}]log.txt".format(name[1:])
 
-def test_levels(levels, gui, gui_limiter):
+def test_levels(levels, gui, gui_limiter, timeout):
     limiter_count = 0
     for lvl in levels:
         lvl_path = find_level(lvl)
@@ -35,30 +35,37 @@ def test_levels(levels, gui, gui_limiter):
             if gui and limiter_count < gui_limiter:
                 cmd = gui_command
                 limiter_count += 1
-            p = Popen(cmd.format(lvl_path), stdout=PIPE, stderr=STDOUT)
+
+            p = Popen(cmd.format(lvl_path, timeout), stdout=PIPE, stderr=STDOUT)
 
             log_file = format_log_name(lvl_path)
-            print("Creating log file: {}".format(log_file))
-
             f = open("./logs/{}".format(log_file), 'w', encoding='utf-8')
+            print("Created log file: {}".format(log_file))
             for line in p.stdout:
                 str_line = line.decode('utf-8').rstrip("\n")
-                if "[server][info] Level solved" in str_line:
-                    print("{} solved: {}".format(lvl, "Yes" in str_line))
-                f.write(str_line)
-            f.close()
 
+                if "Level solved" in str_line:
+                    print("{} solved: {}".format(lvl, "Yes" in str_line))
+                elif "failed to parse" in str_line:
+                    print("[OOPS] Server failed to load file")
+                elif "timed out" in str_line:
+                    print("[OOPS] Client timed out after {} seconds".format(timeout))
+
+                f.write(str_line)
+            print("Finished writing to: {}".format(log_file))
+            f.close()
+            p.kill()
         else:
             print("NOT FOUND: {}".format(lvl))
 
 def main(args):
     if args.lvls is not None:
         levels = args.lvls.split(',')
-        test_levels(levels, args.g, args.madgui)
+        test_levels(levels, args.g, args.madgui, args.t)
     elif args.dir is not None:
         levels = scan_dir_for_levels(args.dir, args.recur)
         if len(levels) > 0:
-            test_levels(levels, args.g, args.madgui)
+            test_levels(levels, args.g, args.madgui, args.t)
     else:
         print("Did not supply level or directory arguments. Use '-h' for help")
 
@@ -71,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument('-recur', default=False, help='Set to true to also test files in sub-directories of given directory')
     parser.add_argument('-g', default=False, help='Set to true to also run the server graphics. Limited to 1 level by default.')
     parser.add_argument('-madgui', default=1, type=int, help='Set the gui limit to whatever and make your machine suffer! Use at your own risk')
-
+    parser.add_argument('-t', default=10, type=int, help='Set the timeout for the client in seconds. Default: 60')
     args = parser.parse_args()
 
     # Run client
