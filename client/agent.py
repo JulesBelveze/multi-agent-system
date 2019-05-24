@@ -122,19 +122,12 @@ class Agent:
                                 if DIR_MIRROR.get(item[0]) is not box_dir_value[0]:
                                     agent_dir_value = item
                                     flip_transition = True
-
-                                    # Make sure box direction is to agent's current pos
-                                    if box_dir_value[2][0] != agent_dir_value[2][0] and box_dir_value[2][1] != agent_dir_value[2][1]:
-                                        for j in range(1, len(box_dir_values)):
-                                            box = box_dir_values[j]
-                                            if box[2][0] == agent[0] and box[2][1] == agent[1]:
-                                                box_dir_value = box
-                                                break
                                     break
-                        else:
-                            # Make sure the box direction is to agent's current pos
-                            if box_dir_value[2][0] != agent[0] and box_dir_value[2][1] != agent[1]:
-                                box_dir_value = box_dir_values[1]
+
+                        # Make sure the box direction is to agent's current pos.
+                        # Relies on the grid to have 2 pairs of identical values. If no longer true, need loop
+                        if box_dir_value[2][0] != agent[0] and box_dir_value[2][1] != agent[1]:
+                            box_dir_value = box_dir_values[1]
 
                         # Mirror box direction for server to interpret
                         box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
