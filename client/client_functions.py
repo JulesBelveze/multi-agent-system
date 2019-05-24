@@ -2,8 +2,10 @@ from __future__ import print_function
 
 from state import State
 from action import Action
+from agent import Agent
 
 from action import ActionType
+
 
 def get_box_key_by_position(row, col, state: 'State'):
     '''Return the key of a box at a given position'''
@@ -122,3 +124,27 @@ def getLen(obj):
         return 0
     else:
         return len(obj)
+
+
+def reassign_goals(agents, current_state: 'State', goal_state: 'State', walls, client: 'Client', goals_missing=None):
+    new_solution = []
+    if goals_missing is not None:
+        for j, agent in enumerate(agents):
+            if agent.agent_key in goals_missing.keys():
+                box_key = goals_missing[agent.agent_key]
+                client.agents[j] = Agent(current_state, agent.agent_key)
+                client.agents[j].assign_goal(goal_state, box_key)
+                new_solution.append(client.agents[j].find_path_to_goal(walls))
+            else:
+                new_solution.append([])
+
+    else:
+        for j, agent in enumerate(agents):
+            if agent.has_goal():
+                box_key = client.agents[j].box_key
+                client.agents[j] = Agent(current_state, agent.agent_key)
+                client.agents[j].assign_goal(goal_state, box_key)
+                new_solution.append(client.agents[j].find_path_to_goal(walls))
+            else:
+                new_solution.append([])
+    return new_solution

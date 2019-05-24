@@ -16,7 +16,8 @@ from message import msg_server_comment
 from message import msg_server_action
 
 from action import Direction
-from client_functions import add_padding_actions, get_box_key_by_position, check_action, missing_goals, getLen
+from client_functions import add_padding_actions, get_box_key_by_position, check_action, missing_goals, getLen, \
+    reassign_goals
 
 
 class Client:
@@ -84,7 +85,8 @@ class Client:
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
                 elif char not in " ":
-                    msg_server_err("Error parsing initial level: unexpected character: {}({},{})".format(char, row, col))
+                    msg_server_err(
+                        "Error parsing initial level: unexpected character: {}({},{})".format(char, row, col))
                     sys.exit(1)
 
         # looping through the goal level
@@ -135,7 +137,6 @@ class Client:
                         solutions.append(steps)
                 except IndexError:
                     continue
-
 
         # handling the fact that some agents might have no goal by adding an empty
         # list to their corresponding position that will be padded with NoOp actions
@@ -202,15 +203,13 @@ def main(args):
                 action[int(key_agent)] = ActionType.NoOp
             msg_server_comment("Switching to action: " + printer.format(*action))
 
-            new_solution = []
-            for j, agent in enumerate(starfish_client.agents):
-                if agent.has_goal():
-                    box_key = starfish_client.agents[j].box_key
-                    starfish_client.agents[j] = Agent(current_state, agent.agent_key)
-                    starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
-                else:
-                    new_solution.append([])
+            new_solution = reassign_goals(
+                starfish_client.agents,
+                current_state,
+                starfish_client.goal_state,
+                walls,
+                starfish_client
+            )
             new_solution = add_padding_actions(new_solution, nb_agents, current_state)
 
             # removing the actions from previous goal and adding the ones from the new goal
@@ -228,16 +227,14 @@ def main(args):
         # checking reassigning the missing goals if it is not goal state
         if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
             goals_missing = missing_goals(current_state, starfish_client.goal_state)
-            msg_server_comment(goals_missing)
-            new_solution = []
-            for j, agent in enumerate(starfish_client.agents):
-                if agent.agent_key in goals_missing.keys():
-                    box_key = goals_missing[agent.agent_key]
-                    starfish_client.agents[j] = Agent(current_state, agent.agent_key)
-                    starfish_client.agents[j].assign_goal(starfish_client.goal_state, box_key)
-                    new_solution.append(starfish_client.agents[j].find_path_to_goal(walls))
-                else:
-                    new_solution.append([])
+            new_solution = reassign_goals(
+                starfish_client.agents,
+                current_state,
+                starfish_client.goal_state,
+                walls,
+                starfish_client,
+                goals_missing
+            )
 
             # goal state not reached but the action list is empty, meaning that
             # the agents are somehow blocked
