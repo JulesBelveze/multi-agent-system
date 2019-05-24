@@ -52,11 +52,11 @@ def test_levels(levels, gui, gui_limiter, timeout):
                     print("[OOPS] Client timed out after {} seconds".format(timeout))
 
                 f.write(str_line)
-            print("Finished writing to: {}".format(log_file))
+            print("Finished writing to: {}\n".format(log_file))
             f.close()
             p.kill()
         else:
-            print("NOT FOUND: {}".format(lvl))
+            print("NOT FOUND: {}\n".format(lvl))
 
 def main(args):
     if args.lvls is not None:
