@@ -84,7 +84,7 @@ class Client:
                 elif char in "0123456789":
                     self.initial_state.agents[char] = (row, col, color_dict[char])
                 elif char not in " ":
-                    msg_server_err("Error parsing initial level: unexpected character.")
+                    msg_server_err("Error parsing initial level: unexpected character: {}({},{})".format(char, row, col))
                     sys.exit(1)
 
         # looping through the goal level
@@ -95,8 +95,11 @@ class Client:
                     if not self.goal_state.boxes.get(char):
                         self.goal_state.boxes[char] = []
                     self.goal_state.boxes[char].append((row, col, color_dict[char]))
+                # looking for agents
+                elif char in "0123456789":
+                    self.goal_state.agents[char] = (row, col, color_dict[char])
                 elif char not in "+ ":
-                    msg_server_err("Error parsing goal level: unexpected character.")
+                    msg_server_err("Error parsing goal level: unexpected character: {}({},{})".format(char, row, col))
                     sys.exit(1)
 
     def solve_level(self):
