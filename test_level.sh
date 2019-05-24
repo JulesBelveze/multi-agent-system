@@ -1,1 +1,1 @@
-java -jar server.jar -c "python3 client/client.py" -l levels/MA_3conflict.lvl -g
+java -jar server.jar -c "python3 client/client.py" -l levels/comp18/MAAlphaOne.lvl -g

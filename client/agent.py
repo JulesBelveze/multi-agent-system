@@ -23,7 +23,10 @@ class Agent:
         self.path_finder = Path(self.agent_key, box_key)
 
     def has_goal(self):
-        if self.goal_state is None or self.box_key is None:
+        try:
+            if self.goal_state is None or self.box_key is None:
+                return False
+        except AttributeError:
             return False
         return True
 
@@ -45,13 +48,31 @@ class Agent:
         agent = self.current_state.agents.get(self.agent_key)
         return abs(c_box[0] - agent[0]) + abs(c_box[1] - agent[1]) == 1
 
+    def find_a_goal_cell(self):
+        '''Useful if we don't have the same number of boxes and goals'''
+        try:
+            return self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        except IndexError:
+            goal_boxes = self.goal_state.boxes.get(self.box_key[0])
+            curr_boxes = self.current_state.boxes.get(self.box_key[0])
+            for goal_box in goal_boxes:
+                if goal_box in curr_boxes:
+                    continue
+                else:
+                    return goal_box
+
+    def get_path(self, walls):
+        agent = self.current_state.agents.get(self.agent_key)
+        c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        return self.path_finder.calc_route(walls, (agent[0], agent[1]), (c_box[0], c_box[1]), self.current_state)
+
     def find_path_to_goal(self, walls):
         if not self.has_goal():
             return None
 
         agent = self.current_state.agents.get(self.agent_key)
         c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
-        g_box = self.goal_state.boxes.get(self.box_key[0])[self.box_key[1]]
+        g_box = self.find_a_goal_cell()
         final_actions = []
 
         # Find path to current box
