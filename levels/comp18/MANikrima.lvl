@@ -1,14 +1,14 @@
 #domain
 hospital
 #levelname
-MAExample
+MANikrima
 #colors
-red: 0, A
+red: 0, A, C
 green: 1, B
 #initial
 ++++++++++++
 +       0+ +
-+ ++++++++A+
++ +C++++++A+
 +          +
 +B++++++++ +
 + +1       +
@@ -16,8 +16,8 @@ green: 1, B
 #goal
 ++++++++++++
 +        +A+
-+ ++++++++ +
-+          +
++ + ++++++ +
++ C        +
 + ++++++++ +
 +B+        +
 ++++++++++++

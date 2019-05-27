@@ -30,7 +30,7 @@ class ActionType:
 ActionType.Move = ActionType("Move")
 ActionType.Push = ActionType("Push")
 ActionType.Pull = ActionType("Pull")
-ActionType.Wait = ActionType("Wait")
+ActionType.NoOp = ActionType("NoOp")
 
 class Action:
     '''
@@ -40,7 +40,12 @@ class Action:
         self.action_type = action_type
         self.agent_dir = agent_dir
         self.box_dir = box_dir
-        self._repr = '[{} ({},{})]'.format(self.action_type, self.agent_dir, self.box_dir)
+        if self.action_type == ActionType.Move:
+            self._repr = '{}({})'.format(self.action_type, self.agent_dir)
+        elif self.action_type == ActionType.NoOp:
+            self._repr = '{}'.format(self.action_type)
+        else:
+            self._repr = '{}({},{})'.format(self.action_type, self.agent_dir, self.box_dir)
 
     def __repr__(self):
         return self._repr
@@ -49,14 +54,17 @@ class Action:
 ALL_ACTIONS = []
 
 # Populate
-ALL_ACTIONS.append(Action(ActionType.Wait, None, None))
 for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
     ALL_ACTIONS.append(Action(ActionType.Move, agent_dir, None))
 
-    for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
-        if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
-            # If not opposite directions
-            ALL_ACTIONS.append(Action(ActionType.Push, agent_dir, box_dir))
-        if agent_dir is not box_dir:
-            # If not same directions
-            ALL_ACTIONS.append(Action(ActionType.Pull, agent_dir, box_dir))
+    for action in (ActionType.Push, ActionType.Pull):
+        for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
+            if action is ActionType.Push:
+                # If not opposite directions
+                if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
+                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+            else:
+                # If not the same directions
+                if agent_dir is not box_dir:
+                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+ALL_ACTIONS.append(Action(ActionType.NoOp, None, None))

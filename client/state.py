@@ -1,12 +1,12 @@
 from action import ALL_ACTIONS, ActionType
-#from action import ALL_ACTIONS, ActionType
+import copy
+
 
 class State:
-    def __init__(self, copy: 'State' = None, **kwargs):
+    def __init__(self, duplicate: 'State' = None, **kwargs):
         '''
-        If copy is None: Creates an empty State.
-        If copy is not None: Creates a copy of the copy state.
-
+        If duplicate is None: Creates an empty State.
+        If duplicate is not None: Creates a copy of the duplicate state.
         The lists boxes, and goals are indexed from top-left of the level, row-major order (row, col).
                Col 0  Col 1  Col 2  Col 3
         Row 0: (0,0)  (0,1)  (0,2)  (0,3)  ...
@@ -14,11 +14,10 @@ class State:
         Row 2: (2,0)  (2,1)  (2,2)  (2,3)  ...
         ...
         The dictionaries of agents and boxes are of the form key: char, value:(row, col, color)
-
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
         self._hash = None
-        if copy is None:
+        if duplicate is None:
             self.agents = {}
             self.boxes = {}
 
@@ -27,113 +26,60 @@ class State:
 
             self.depth = 0
         else:
-            self.agents = copy.agents
-            self.boxes = copy.boxes
+            self.agents = dict(duplicate.agents)
+            self.boxes = dict(copy.deepcopy(duplicate.boxes))
 
-            self.parent = copy.parent
-            self.action = copy.action
+            self.parent = duplicate.parent
+            self.action = duplicate.action
 
-            self.depth = copy.depth
+            self.depth = duplicate.depth
 
     def get_children(self, walls, agent_key, box_key):
         '''
         Returns a list of child states attained from applying every applicable action in the current state
         '''
         children = []
-
         agent = self.agents.get(agent_key)
+        box = self.boxes.get(box_key[0])[box_key[1]]
+
         for action in ALL_ACTIONS:
-            new_agent_row = agent[0] + action.agent_dir.d_row
-            new_agent_col = agent[1] + action.agent_dir.d_col
+            child = None
 
-            if self.is_free(walls, new_agent_row, new_agent_col):
+            if action.action_type is ActionType.NoOp:
+                child = self.create_child_state(action)
+            else:
+                new_agent = (agent[0] + action.agent_dir.d_row, agent[1] + action.agent_dir.d_col, agent[2])
+
                 if action.action_type is ActionType.Move:
-                    child = State(self)
-                    child.agents.get(agent_key)[0] = new_agent_row
-                    child.agents.get(agent_key)[1] = new_agent_col
-                    child.parent = self
-                    child.action = action
-                    child.depth += 1
-                    children.append(child)
+                    if self.is_free(walls, new_agent[0], new_agent[1]):
+                        child = self.create_child_state(action)
+                        child.agents[agent_key] = new_agent
+                else:
+                    if action.action_type is ActionType.Push:
+                        new_box = (box[0] + action.box_dir.d_row, box[1] + action.box_dir.d_col, box[2])
 
-                elif action.action_type is ActionType.Push and box_key is not None:
-                    if self.is_agent_at_box(new_agent_row, new_agent_col, box_key):
-                        new_box_row = new_agent_row + action.box_dir.d_row
-                        new_box_col = new_agent_col + action.box_dir.d_col
+                        if self.can_agent_push_box(new_agent, box) and self.is_free(walls, new_box[0], new_box[1]):
+                            child = self.create_child_state(action)
+                            child.agents[agent_key] = new_agent
+                            child.boxes[box_key[0]][box_key[1]] = new_box
+                    elif action.action_type is ActionType.Pull:
+                        new_box = (box[0] + action.box_dir.d_row * -1, box[1] + action.box_dir.d_col * -1, box[2])
 
-                        if self.is_free(walls, new_box_row, new_box_col):
-                            child = State(self)
-                            child.agents.get(agent_key)[0] = new_agent_row
-                            child.agents.get(agent_key)[1] = new_agent_col
-                            child.boxes.get(box_key)[0] = new_box_row
-                            child.boxes.get(box_key)[1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.depth += 1
-                            children.append(child)
+                        if self.can_agent_pull_box(agent, new_box) and self.is_free(walls, new_agent[0], new_agent[1]):
+                            child = self.create_child_state(action)
+                            child.agents[agent_key] = new_agent
+                            child.boxes[box_key[0]][box_key[1]] = new_box
 
-                elif action.action_type is ActionType.Pull and box_key is not None:
-                    if self.is_free(walls, new_agent_row, new_agent_col):
-                        new_box_row = agent[0] + action.box_dir.d_row
-                        new_box_col = agent[1] + action.box_dir.d_col
-
-                        if self.is_agent_at_box(new_box_row, new_box_col, box_key):
-                            child = State(self)
-                            child.agents.get(agent_key)[0] = new_agent_row
-                            child.agents.get(agent_key)[1] = new_agent_col
-                            child.boxes.get(box_key)[0] = new_box_row
-                            child.boxes.get(box_key)[1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.depth += 1
-                            children.append(child)
-
-                elif action.action_type is ActionType.Wait:
-                    child = State(self)
-                    child.parent = self
-                    child.action = action
-                    child.depth += 1
-                    children.append(child)          
-        '''
-                elif action.action_type is ActionType.Push:
-                    is_right_box_at, right_box = self.right_box_at(new_row_ag, new_col_ag, agent_color)
-                    if is_right_box_at:
-                        new_box_row = new_row_ag + action.box_dir.d_row
-                        new_box_col = new_col_ag + action.box.dir.d_col
-                        if self.is_free(walls, new_box_row, new_box_col):
-                            child = State(self)
-                            child.agents = new_agents
-                            child.boxes[right_box][0] = new_box_row
-                            child.boxes[right_box][1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.g += 1
-                            children.append(child)
-
-                # checks for action Pull
-                elif action.action_type is ActionType.Pull:
-                    is_right_box_at, right_box = self.right_box_at(new_box_row + action.box_dir.d_row,
-                                                                   new_box_col + action.box_dir.d_col)
-                    if is_right_box_at:
-                        new_box_row = self.agents[agent][0]
-                        new_box_col = self.agents[agent][1]
-                        if self.is_free(walls, new_row_ag, new_row_ag):
-                            child = State(self)
-                            child.agents = new_agents
-                            child.boxes[right_box][0] = new_box_row
-                            child.boxes[right_box][1] = new_box_col
-                            child.parent = self
-                            child.action = action
-                            child.g += 1
-                            children.append(child)
-                elif action.action_type is ActionType.Wait:
-                    child = State(self)
-                    child.parent = self
-                    child.action = action
-                    child.g += 1
-                    children.append(child)
-        '''
+            if child is not None:
+                children.append(child)
         return children
+
+    def create_child_state(self, action):
+        child = State(self)
+        child.parent = self
+        child.depth += 1
+        child.action = action
+        return child
 
     def is_free(self, walls, row, col):
         '''Function checking if a given position is free'''
@@ -141,25 +87,25 @@ class State:
         if walls[row][col]:
             return False
         # checking if any agent is present
-        for agent in self.agents:
+        for key, agent in self.agents.items():
             if row == agent[0] and col == agent[1]:
                 return False
         # checking if any box is present
-        for box in self.boxes:
-            if row == box[0] and col == box[1]:
-                return False
+        for key, boxes in self.boxes.items():
+            for box in boxes:
+                if row == box[0] and col == box[1]:
+                    return False
         return True
 
-    def is_agent_at_box(self, agent_row: 'int', agent_col: 'int', box_key: 'str'):
-        return self.boxes.get(box_key)[0] == agent_row and self.boxes.get(box_key)[1] == agent_col
+    def can_agent_push_box(self, new_agent, box):
+        return box[0] == new_agent[0] and box[1] == new_agent[1]
 
-    # def right_box_at(self, row, col, agent_color):
-    #     '''Function checking if an agent can push a box and returning the right box if yes.
-    #     Meaning checking the location and the color of the boxes'''
-    #     for box, box_values in self.boxes.items():
-    #         if row == box_values[0] and col == box_values[1] and agent_color == box_values[2]:
-    #             return True, box
-    #     return False, None
+    def can_agent_pull_box(self, agent, new_box):
+        return new_box[0] == agent[0] and new_box[1] == agent[1]
+
+    def is_agent_at_box(self, agent_row: 'int', agent_col: 'int', box_key: 'str'):
+        box = self.boxes.get(box_key[0])[box_key[1]]
+        return box[0] == agent_row and box[1] == agent_col
 
     def is_initial_state(self):
         '''Checking if state is the initial one by checking if it has a parent state'''
@@ -168,7 +114,7 @@ class State:
     def is_goal_state(self, goal_state, box_key: 'str' = None):
         '''Check if current box dictionary (or individual box) matches goal box dictionary'''
         if box_key is not None:
-            return self.boxes.get(box_key) == goal_state.boxes.get(box_key)
+            return self.boxes.get(box_key[0])[box_key[1]] == goal_state.boxes.get(box_key[0])[box_key[1]]
         return self.boxes == goal_state.boxes
 
     def extract_plan(self):
@@ -179,3 +125,19 @@ class State:
             state = state.parent
         plan.reverse()
         return plan
+
+    def __repr__(self):
+        lines = []
+        for i, agent in self.agents.items():
+            line = []
+            line.append("Agent {} [{}, {}, {}]: ".format(i, agent[0], agent[1], agent[2]))
+
+            for j, boxes in self.boxes.items():
+                for box in boxes:
+                    # Make sure boxes are grouped by colour
+                    if box[2] == agent[2]:
+                        line.append("{} [{}, {}] ".format(j, box[0], box[1]))
+
+            lines.append(''.join(line))
+        lines.append("Action: {}, Depth: {}".format(self.action, self.depth))
+        return '\n'.join(lines)
