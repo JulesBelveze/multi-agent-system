@@ -15,6 +15,7 @@ Direction.N = Direction('N', -1, 0)
 Direction.E = Direction('E', 0, 1)
 Direction.S = Direction('S', 1, 0)
 Direction.W = Direction('W', 0, -1)
+Direction.H = Direction('H', 0, 0)
 
 class ActionType:
     Move = Push = Pull = None
@@ -72,21 +73,22 @@ DIR_MIRROR[Direction.E.name] = Direction.W.name
 DIR_MIRROR[Direction.S.name] = Direction.N.name
 DIR_MIRROR[Direction.W.name] = Direction.E.name
 
-# All possible actions
-ALL_ACTIONS = []
-
-# Populate
+# Map of all possible actions, grouped by agent movement directions
+ALL_ACTIONS = {}
 for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
-    ALL_ACTIONS.append(Action(ActionType.Move, agent_dir, None))
+    ALL_ACTIONS[agent_dir] = []
+    ALL_ACTIONS[agent_dir].append(Action(ActionType.Move, agent_dir, None))
 
     for action in (ActionType.Push, ActionType.Pull):
         for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
             if action is ActionType.Push:
                 # If not opposite directions
                 if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
-                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+                    ALL_ACTIONS[agent_dir].append(Action(action, agent_dir, box_dir))
             else:
                 # If not the same directions
                 if agent_dir is not box_dir:
-                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
-ALL_ACTIONS.append(Action(ActionType.NoOp, None, None))
+                    ALL_ACTIONS[agent_dir].append(Action(action, agent_dir, box_dir))
+
+# Created a NoOp direction (H) so that it can have a key assigned
+ALL_ACTIONS[Direction.H] = [Action(ActionType.NoOp, None, None)]
