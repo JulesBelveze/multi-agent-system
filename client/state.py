@@ -36,7 +36,7 @@ class State:
 
         # Find valid action based on supplied directions
         valid_action = None
-        for action in ALL_ACTIONS:
+        for action in ALL_ACTIONS.get(agent_dir):
             if action.agent_dir is agent_dir and action.box_dir is box_dir:
                 n_agent = (c_agent[0] + action.agent_dir.d_row, c_agent[1] + action.agent_dir.d_col, c_agent[2])
 
@@ -65,30 +65,6 @@ class State:
                             break
 
         return child
-        # # Update agent and box positions based on action
-        # if valid_action is not None:
-        #     child = self.create_child_state(valid_action)
-
-        #     # Update box pos
-        #     if box_dir is not None:
-        #         c_box = self.boxes.get(box_key[0])[box_key[1]]
-        #         n_box = c_box
-        #         if action.action_type is ActionType.Push:
-        #             n_box = (c_box[0] + action.box_dir.d_row, c_box[1] + action.box_dir.d_col, c_box[2])
-
-        #         elif action.action_type is ActionType.Pull:
-        #             n_box = (c_box[0] + action.box_dir.d_row * -1, c_box[1] + action.box_dir.d_col * -1, c_box[2])
-
-        #         child.boxes[box_key[0]][box_key[1]] = n_box
-
-        #     # Update agent pos
-        #     c_agent = self.agents.get(agent_key)
-        #     n_agent = (c_agent[0] + action.agent_dir.d_row, c_agent[1] + action.agent_dir.d_col, c_agent[2])
-        #     if self.is_free(walls, n_agent[0], n_agent[1]):
-        #         child.agents[agent_key] = n_agent
-
-        #     return child
-        # return None
 
     def get_children(self, walls, agent_key, box_key):
         '''
