@@ -41,11 +41,13 @@ def test_levels(levels, is_dir, gui, timeout):
                 str_line = line.decode('utf-8').rstrip("\n")
 
                 if "Level solved" in str_line:
-                    print("{} solved: {}".format(lvl, "Yes" in str_line))
+                    print("Solved: {}".format("Yes" in str_line))
                 elif "failed to parse" in str_line:
                     print("[OOPS] Server failed to load file")
                 elif "timed out" in str_line:
                     print("[OOPS] Client timed out after {} seconds".format(timeout))
+                elif "Last action time:" in str_line:
+                    print("Time:{}".format(str_line.split(":")[1][:-1]))
 
                 f.write(str_line)
             print("Finished writing to: {}\n".format(log_file))
