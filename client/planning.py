@@ -1,12 +1,18 @@
 import copy
+from collections import defaultdict
 from state import State
 from operator import itemgetter
 
+from message import msg_server_err
+from message import msg_server_comment
+from message import msg_server_action
+
 class Plan:
     def __init__(self, initial_state: 'State', goal_state: 'State'):
-        self.orderings = []
+        self.action_orders = defaultdict(list)
+        self.unique_action_count = 0
         self.actions = {}
-        self.open_subgoals = []
+        self.subgoals = []
         self.links = []
 
         self.create_action_blueprints(initial_state, goal_state)
@@ -22,7 +28,7 @@ class Plan:
             context_entity = None
             for arg in precon.arguments:
                 if arg.name == "box":
-                    arg.value = box_keys[b_key]
+                    arg.value = (box_keys[b_key], b_curr)
                     context_entity = goal_state.boxes.get(box_keys[b_key])[b_curr]
                     if b_curr < len(goal_state.boxes.get(box_keys[b_key])) - 1:
                         b_curr += 1
@@ -37,7 +43,7 @@ class Plan:
                     arg.value = context_entity[0]
                 elif arg.name == "col":
                     arg.value = context_entity[1]
-            self.open_subgoals.append(precon)
+            self.subgoals.append(PlanSubGoal(precon, end_action))
 
         start_action = self.actions.get("Start").instantiate_from_blueprint()
         box_keys = list(initial_state.boxes.keys())
@@ -50,7 +56,7 @@ class Plan:
             context_entity = None
             for arg in eff.arguments:
                 if arg.name == "box":
-                    arg.value = box_keys[b_key]
+                    arg.value = (box_keys[b_key], b_curr)
                     context_entity = initial_state.boxes.get(box_keys[b_key])[b_curr]
                     if b_curr < len(initial_state.boxes.get(box_keys[b_key])) - 1:
                         b_curr += 1
@@ -70,10 +76,12 @@ class Plan:
                     arg.value = context_entity[1]
 
         # Create ordering constraint
-        self.orderings.append(PlanActionOrdering(start_action, end_action))
+        self.action_orders[start_action].append(end_action)
+        self.unique_action_count += 2
 
-        for order in self.orderings:
-            print(order)
+        msg_server_comment("Starting subgoals:")
+        for subgoal in self.subgoals:
+            msg_server_comment(subgoal.state)
 
     '''
     State blueprints are created in pairs (positive, negative).
@@ -81,23 +89,23 @@ class Plan:
     '''
     def create_plan_state_blueprints(self):
         state_blueprints = {}
-        state_blueprints["Detached"] = [PlanState("Detached", False, ["agent"])]
-        state_blueprints["Detached"].append(PlanState("Detached", True, ["agent"]))
+        state_blueprints["Detached"] = [PlanState("Detached", False, False, ["agent"])]
+        state_blueprints["Detached"].append(PlanState("Detached", True, False, ["agent"]))
 
-        state_blueprints["AttachedTo"] = [PlanState("AttachedTo", False, ["agent", "box"])]
-        state_blueprints["AttachedTo"].append(PlanState("AttachedTo", True, ["agent", "box"]))
+        state_blueprints["AttachedTo"] = [PlanState("AttachedTo", False, False, ["agent", "box"])]
+        state_blueprints["AttachedTo"].append(PlanState("AttachedTo", True, False, ["agent", "box"]))
 
-        state_blueprints["NextTo"] = [PlanState("NextTo", False, ["agent", "box"])]
-        state_blueprints["NextTo"].append(PlanState("NextTo", True, ["agent", "box"]))
+        state_blueprints["NextTo"] = [PlanState("NextTo", False, False, ["agent", "box"])]
+        state_blueprints["NextTo"].append(PlanState("NextTo", True, False, ["agent", "box"]))
 
-        state_blueprints["BoxAtLocation"] = [PlanState("BoxAtLocation", False, ["box", "row", "col"])]
-        state_blueprints["BoxAtLocation"].append(PlanState("BoxAtLocation", True, ["box", "row", "col"]))
+        state_blueprints["BoxAtLocation"] = [PlanState("BoxAtLocation", False, True, ["box", "row", "col"])]
+        state_blueprints["BoxAtLocation"].append(PlanState("BoxAtLocation", True, True, ["box", "row", "col"]))
 
-        state_blueprints["AgentAtLocation"] = [PlanState("AgentAtLocation", False, ["agent", "row", "col"])]
-        state_blueprints["AgentAtLocation"].append(PlanState("AgentAtLocation", True, ["agent", "row", "col"]))
+        state_blueprints["AgentAtLocation"] = [PlanState("AgentAtLocation", False, True, ["agent", "row", "col"])]
+        state_blueprints["AgentAtLocation"].append(PlanState("AgentAtLocation", True, True, ["agent", "row", "col"]))
 
-        state_blueprints["BoxInGoal"] = [PlanState("BoxInGoal", False, ["box", "goal"])]
-        state_blueprints["BoxInGoal"].append(PlanState("BoxInGoal", True, ["box", "goal"]))
+        state_blueprints["BoxInGoal"] = [PlanState("BoxInGoal", False, False, ["box", "goal"])]
+        state_blueprints["BoxInGoal"].append(PlanState("BoxInGoal", True, False, ["box", "goal"]))
 
         return state_blueprints
 
@@ -109,7 +117,7 @@ class Plan:
         new_action = PlanAction("AttachTo")
         new_action.define_blueprint_arguments(["agent", "box"])
         new_action.define_blueprint_preconditions([plan_states.get("Detached")[1], plan_states.get("NextTo")[0]])
-        new_action.define_blueprint_effects([plan_states.get("Detached")[1], plan_states.get("NextTo")[1]])
+        new_action.define_blueprint_effects([plan_states.get("Detached")[1], plan_states.get("NextTo")[1], plan_states.get("AttachedTo")[1]])
         self.actions["AttachTo"] = new_action
 
         new_action = PlanAction("DetachFrom")
@@ -126,14 +134,14 @@ class Plan:
         self.actions["MoveAgentNextTo"] = new_action
 
         new_action = PlanAction("MoveAgentTo")
-        new_action.define_blueprint_arguments(["agent", "x", "y"])
+        new_action.define_blueprint_arguments(["agent", "row", "col"])
         new_action.define_blueprint_preconditions([plan_states.get("Detached")[1], plan_states.get("AgentAtLocation")[0]])
         new_action.define_blueprint_effects([plan_states.get("Detached")[1], plan_states.get("AgentAtLocation")[1]])
         self.actions["MoveAgentTo"] = new_action
 
         # Box movement
         new_action = PlanAction("MoveBoxTo")
-        new_action.define_blueprint_arguments(["agent", "box", "x", "y"])
+        new_action.define_blueprint_arguments(["agent", "box", "row", "col"])
         new_action.define_blueprint_preconditions([plan_states.get("AttachedTo")[1], plan_states.get("BoxAtLocation")[0]])
         new_action.define_blueprint_effects([plan_states.get("AttachedTo")[1], plan_states.get("BoxAtLocation")[1]])
         self.actions["MoveBoxTo"] = new_action
@@ -160,6 +168,65 @@ class Plan:
                 precon_list.append(plan_states.get("BoxAtLocation")[1])
         new_action.define_blueprint_preconditions(precon_list)
         self.actions["End"] = new_action
+
+    def complete_plan(self, current_state: 'State', agent_key):
+        open_subgoals = self.subgoals
+        while(len(open_subgoals) > 0):
+            subgoal = open_subgoals.pop(0)
+
+            # Find action that satisfies subgoal
+            possible_actions = []
+            for act in self.actions.items():
+                if not act[0] == "Start" and not act[0] == "End":
+                    if act[1].find_effect(subgoal.state):
+                        possible_actions.append(act)
+
+            if len(possible_actions) == 0:
+                msg_server_err("Could not find action satisfying subgoal: {}".format(subgoal.state.__repr__()))
+                return None
+
+            for sat_action in possible_actions:
+
+                # Instantiate new action
+                sat_action = sat_action[1].instantiate_from_blueprint()
+                box_key = [it for it in subgoal.state.arguments if it.name == "box"][0].value
+                sat_action.define_arguments(sat_action.arguments, current_state, agent_key, box_key)
+                for precon in sat_action.preconditions:
+                    sat_action.define_arguments(precon.arguments, current_state, agent_key, box_key)
+                for eff in sat_action.effects:
+                    sat_action.define_arguments(eff.arguments, current_state, agent_key, box_key)
+
+                # Add open preconditions and establish ordering
+                for precon in sat_action.preconditions:
+                    if not precon.is_positional:
+                        open_subgoals.append(PlanSubGoal(precon, sat_action))
+
+                if not self.action_orders.get(sat_action):
+                    self.action_orders[sat_action].append(subgoal.action)
+                    self.unique_action_count += 1
+
+
+        self.topological_sort()
+
+    def topological_sort(self):
+        visited = [False] * self.unique_action_count
+        stack = []
+
+        for i in range(self.unique_action_count):
+            if visited[i] == False:
+                self.topological_helper(i, visited, stack)
+
+        # Print result
+        print(stack)
+
+    def topological_helper(self, index, visited, stack):
+        visited[index] = True
+
+        for i in self.action_orders[index]:
+            if visited[i] == False:
+                self.topological_helper(i, visited, stack)
+
+        stack.insert(0, index)
 
 class PlanAction:
     def __init__(self, action_name):
@@ -197,6 +264,46 @@ class PlanAction:
             action.is_blueprint = False
             return action
 
+    def define_arguments(self, target_list, current_state, agent_key, box_key):
+        context = None
+        for arg in target_list:
+            if arg.name == "agent":
+                context = current_state.agents.get(agent_key)
+                arg.value = agent_key
+            elif arg.name == "box":
+                context = current_state.boxes.get(box_key[0])[box_key[1]]
+                arg.value = box_key
+            elif arg.name == "row":
+                arg.value = context[0]
+            elif arg.name == "col":
+                arg.value = context[1]
+
+    def bind_arguments(self, argument_list):
+        if len(self.arguments) > 0:
+            i = 0
+            for arg in self.arguments:
+                arg.value = argument_list[i]
+
+    def bind_preconditions(self, preconditions):
+        if len(self.preconditions) > 0:
+            for precon in self.preconditions:
+                i = 0
+                for arg in precon.arguments:
+                    arg.value = preconditions[precon.predicate][i]
+
+    def bind_effects(self, effects):
+        if len(self.effects) > 0:
+            for eff in self.effects:
+                i = 0
+                for arg in eff.arguments:
+                    arg.value = effects[eff.predicate][i]
+
+    def find_effect(self, plan_state: 'PlanState'):
+        for eff in self.effects:
+            if eff == plan_state:
+                return True
+        return False
+
     def __repr__(self):
         arguments = []
         for arg in self.arguments:
@@ -222,21 +329,37 @@ class PlanAction:
         return "{} [{}{} ]".format(action_line, precon_line, eff_line)
 
 class PlanState:
-    def __init__(self, state_predicate, is_predicate_true, argument_list):
+    def __init__(self, state_predicate, is_predicate_true, is_positional, argument_list):
         self.predicate = state_predicate
         self.is_true = is_predicate_true
+        self.is_positional = is_positional
         self.arguments = []
 
         for arg in argument_list:
             self.arguments.append(Argument(arg, None))
 
+    def check_in_world(self, current_state: 'State'):
+        is_comparison = False
+        if self.predicate == "BoxAtLocation":
+            box_key = self.arguments[0].value
+            box = current_state.boxes.get(box_key[0])[box_key[1]]
+            is_comparison = box[0] == self.arguments[1].value and box[1] == self.arguments[2].value
+        elif self.predicate == "AgentAtLocation":
+            agent = current_state.agents.get(self.arguments[0].value)
+            is_comparison = agent[0] == self.arguments[1].value and agent[1] == self.arguments[2].value
+
+        return is_comparison if self.is_true else not is_comparison
+
     def __eq__(self, value):
-        return self.predicate == value.predicate and self.is_true == value.is_true
+        return self.predicate == value.predicate and self.is_true == value.is_true# and self.arguments == value.arguments
 
     def __repr__(self):
         arguments = []
         for arg in self.arguments:
-            arguments.append(arg.name)
+            if arg.value is not None:
+                arguments.append("{}:{}".format(arg.name, arg.value))
+            else:
+                arguments.append(arg.name)
 
         line = "{}({})".format(self.predicate, ",".join(arguments))
         if not self.is_true:
@@ -272,6 +395,13 @@ class Argument:
     def __init__(self, arg_name, arg_value):
         self.name = arg_name
         self.value = arg_value
+
+    def __eq__(self, value):
+        return self.name == value.name and self.value == value.value
+
+    def __repr__(self):
+        return "{}:{}".format(self.name, self.value)
+
 
 
 
