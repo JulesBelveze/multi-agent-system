@@ -121,7 +121,6 @@ class Agent:
                                 # Make sure the chosen direction will not be in the direction of the box
                                 for i in range(1, len(agent_dir_values)):
                                     item = agent_dir_values[i]
-                                    #if item[2][0] != c_box[0] and item[2][1] != c_box[1]:
                                     if DIR_MIRROR.get(item[0]) is not box_dir_value[0]:
                                         agent_dir_value = item
                                         flip_transition = True
@@ -152,7 +151,7 @@ class Agent:
                                 flip_transition = False
 
                             # Force the agent's direction to current pos of box, making it push the box
-                            if agent_dir_value[2][0] != c_box[0] and agent_dir_value[2][1] != c_box[1]:
+                            if agent_dir_value[2][0] != c_box[0] or agent_dir_value[2][1] != c_box[1]:
                                 for i in range(1, len(agent_dir_values)):
                                     item = agent_dir_values[i]
                                     if item[2][0] == c_box[0] and item[2][1] == c_box[1]:
