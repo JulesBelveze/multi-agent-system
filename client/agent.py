@@ -98,7 +98,7 @@ class Agent:
                 msg_server_comment("Found path from box {} to goal box".format(self.box_key))
                 flip_transition = False
 
-                if self.current_state.is_free(walls, g_box[0], g_box[1]):
+                if self.current_state.is_free(walls, g_box[0], g_box[1]) or agent[0] == g_box[0] and agent[1] == g_box[1]:
                     # Second complete main goal - move box to goal
                     while not self.is_goal_reached():
                         agent_dir_values = self.get_direction_values(agent, path)
