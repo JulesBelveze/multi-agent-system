@@ -118,7 +118,7 @@ class Plan:
         # Attach / Detach
         new_action = PlanAction("AttachTo")
         new_action.define_blueprint_arguments(["agent", "box"])
-        new_action.define_blueprint_preconditions([plan_states.get("Detached")[1], plan_states.get("NextTo")[0]])
+        new_action.define_blueprint_preconditions([plan_states.get("Detached")[1], plan_states.get("NextTo")[1]])
         new_action.define_blueprint_effects([plan_states.get("AttachedTo")[1]])
         self.actions["AttachTo"] = new_action
 
