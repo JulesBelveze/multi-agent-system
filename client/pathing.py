@@ -40,7 +40,6 @@ class Path():
 
         # Set value of destination and start cells
         self.val_grid[end_index[0]][end_index[1]] = 1000
-        #self.val_grid[start_index[0]][start_index[1]] = -1
 
         # Map cells
         self.calc_map(end_index[0], end_index[1])
@@ -55,6 +54,7 @@ class Path():
         d = v_index + 1
         l = h_index - 1
         r = h_index + 1
+        descent = 0.99
         dh,vr,vl,uh = False,False,False,False
         dh_vicinity,vr_vicinity,vl_vicinity,uh_vicinity = [],[],[],[]
 
@@ -71,9 +71,9 @@ class Path():
 
             if len(uh_vicinity) > 1:
                 uh_avg = sum(uh_vicinity) / len(uh_vicinity)
-                self.val_grid[u][h_index] = uh_avg * 0.99
+                self.val_grid[u][h_index] = uh_avg * descent
             else:
-                self.val_grid[u][h_index] = self.val_grid[v_index][h_index] * 0.99
+                self.val_grid[u][h_index] = self.val_grid[v_index][h_index] * descent
             self.level_grid[u][h_index] = True
             uh = True
 
@@ -90,9 +90,9 @@ class Path():
 
             if len(vr_vicinity) > 1:
                 vr_avg = sum(vr_vicinity) / len(vr_vicinity)
-                self.val_grid[v_index][r] = vr_avg * 0.99
+                self.val_grid[v_index][r] = vr_avg * descent
             else:
-                self.val_grid[v_index][r] = self.val_grid[v_index][h_index] * 0.99
+                self.val_grid[v_index][r] = self.val_grid[v_index][h_index] * descent
             self.level_grid[v_index][r] = True
             vr = True
 
@@ -109,9 +109,9 @@ class Path():
 
             if len(dh_vicinity) > 1:
                 dh_avg = sum(dh_vicinity) / len(dh_vicinity)
-                self.val_grid[d][h_index] = dh_avg * 0.99
+                self.val_grid[d][h_index] = dh_avg * descent
             else:
-                self.val_grid[d][h_index] = self.val_grid[v_index][h_index] * 0.99
+                self.val_grid[d][h_index] = self.val_grid[v_index][h_index] * descent
             self.level_grid[d][h_index] = True
             dh = True
 
@@ -128,9 +128,9 @@ class Path():
 
             if len(vl_vicinity) > 1:
                 vl_avg = sum(vl_vicinity) / len(vl_vicinity)
-                self.val_grid[v_index][l] = vl_avg * 0.99
+                self.val_grid[v_index][l] = vl_avg * descent
             else:
-                self.val_grid[v_index][l] = self.val_grid[v_index][h_index] * 0.99
+                self.val_grid[v_index][l] = self.val_grid[v_index][h_index] * descent
             self.level_grid[v_index][l] = True
             vl = True
         if uh == True:
