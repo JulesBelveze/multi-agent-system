@@ -3,12 +3,11 @@ hospital
 #levelname
 SA_simple2x8
 #colors
-red: 0, A
-blue: 1, B
+red: 0, A, B
 #initial
 ++++++++++
 +0A      +
-+1B      +
++ B      +
 ++++++++++
 #goal
 ++++++++++

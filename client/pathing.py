@@ -2,14 +2,18 @@ import numpy as np
 import heapq
 import copy
 from message import msg_server_comment
+import sys
+
+sys.setrecursionlimit(2500)
 
 class Path():
-    def __init__(self, agent_key):
+    def __init__(self, agent_key, box_key):
         self.val_grid = []
         self.level_grid = []
         self.agent_key = agent_key
-        self.val_grid_frontier_v = [] 
-        self.val_grid_frontier_h = [] 
+        self.box_key = box_key
+        self.val_grid_frontier_v = []
+        self.val_grid_frontier_h = []
 
     def calc_route(self, walls, start_index, end_index, state: 'State'):
         lvl_rows = len(walls)
@@ -17,9 +21,13 @@ class Path():
         # Setup map
         self.level_grid = copy.deepcopy(walls)
         self.level_grid[end_index[0]][end_index[1]] = True
+
+        # Expect other boxes to be immovable
+        my_box = state.boxes.get(self.box_key[0])[self.box_key[1]]
         for key, boxes in state.boxes.items():
             for box in boxes:
-                self.level_grid[box[0]][box[1]] = True
+                if box is not my_box:
+                    self.level_grid[box[0]][box[1]] = True
 
         # Expect other agents to be immovable
         for key, agent in state.agents.items():
@@ -32,7 +40,7 @@ class Path():
 
         # Set value of destination and start cells
         self.val_grid[end_index[0]][end_index[1]] = 1000
-        self.val_grid[start_index[0]][start_index[1]] = -1
+        #self.val_grid[start_index[0]][start_index[1]] = -1
 
         # Map cells
         self.calc_map(end_index[0], end_index[1])
@@ -146,7 +154,7 @@ class Path():
             self.val_grid_frontier_v.pop(0)
             self.val_grid_frontier_h.pop(0)
             if len(self.val_grid_frontier_v) == 0:
-                break        
+                break
 
     def is_path_found(self, start_index):
         # Check neighbouring cells for values greater than 0, which means path was found

@@ -1,0 +1,27 @@
+#domain
+hospital
+#levelname
+MA_agent_no_goal_tricky
+#colors
+red: 0, A
+green: 1, B, C
+pink: 2
+#initial
+++++++++++++
++  A       +
++  B       +
++  C       +
++          +
++++++      +
++012       +
+++++++++++++
+#goal
+++++++++++++
++         A+
++         B+
++         C+
++          +
++++++      +
++          +
+++++++++++++
+#end

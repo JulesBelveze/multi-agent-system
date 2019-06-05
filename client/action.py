@@ -15,6 +15,7 @@ Direction.N = Direction('N', -1, 0)
 Direction.E = Direction('E', 0, 1)
 Direction.S = Direction('S', 1, 0)
 Direction.W = Direction('W', 0, -1)
+Direction.H = Direction('H', 0, 0)
 
 class ActionType:
     Move = Push = Pull = None
@@ -50,21 +51,44 @@ class Action:
     def __repr__(self):
         return self._repr
 
-# All possible actions
-ALL_ACTIONS = []
 
-# Populate
+# All possible directions
+ALL_DIRECTIONS = {}
+ALL_DIRECTIONS[Direction.N.name] = (Direction.N.d_row, Direction.N.d_col)
+ALL_DIRECTIONS[Direction.E.name] = (Direction.E.d_row, Direction.E.d_col)
+ALL_DIRECTIONS[Direction.S.name] = (Direction.S.d_row, Direction.S.d_col)
+ALL_DIRECTIONS[Direction.W.name] = (Direction.W.d_row, Direction.W.d_col)
+
+# Get direction class based on name of direction
+DIR_LOOKUP = {}
+DIR_LOOKUP[Direction.N.name] = Direction.N
+DIR_LOOKUP[Direction.E.name] = Direction.E
+DIR_LOOKUP[Direction.S.name] = Direction.S
+DIR_LOOKUP[Direction.W.name] = Direction.W
+
+# Map opposite directions for quick lookup
+DIR_MIRROR = {}
+DIR_MIRROR[Direction.N.name] = Direction.S.name
+DIR_MIRROR[Direction.E.name] = Direction.W.name
+DIR_MIRROR[Direction.S.name] = Direction.N.name
+DIR_MIRROR[Direction.W.name] = Direction.E.name
+
+# Map of all possible actions, grouped by agent movement directions
+ALL_ACTIONS = {}
 for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
-    ALL_ACTIONS.append(Action(ActionType.Move, agent_dir, None))
+    ALL_ACTIONS[agent_dir] = []
+    ALL_ACTIONS[agent_dir].append(Action(ActionType.Move, agent_dir, None))
 
     for action in (ActionType.Push, ActionType.Pull):
         for box_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
             if action is ActionType.Push:
                 # If not opposite directions
                 if agent_dir.d_row + box_dir.d_row != 0 or agent_dir.d_col + box_dir.d_col != 0:
-                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
+                    ALL_ACTIONS[agent_dir].append(Action(action, agent_dir, box_dir))
             else:
                 # If not the same directions
                 if agent_dir is not box_dir:
-                    ALL_ACTIONS.append(Action(action, agent_dir, box_dir))
-ALL_ACTIONS.append(Action(ActionType.NoOp, None, None))
+                    ALL_ACTIONS[agent_dir].append(Action(action, agent_dir, box_dir))
+
+# Created a NoOp direction (H) so that it can have a key assigned
+ALL_ACTIONS[Direction.H] = [Action(ActionType.NoOp, None, None)]
