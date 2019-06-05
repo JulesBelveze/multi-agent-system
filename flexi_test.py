@@ -26,6 +26,7 @@ def format_log_name(level_path):
     return "[{}]log.txt".format(name[1:])
 
 def test_levels(levels, is_dir, gui, timeout):
+    completed_lvl_count = 0
     for lvl in levels:
         lvl_path = lvl if is_dir else find_level(lvl)
         if lvl_path is not None:
@@ -42,6 +43,8 @@ def test_levels(levels, is_dir, gui, timeout):
 
                 if "Level solved" in str_line:
                     print("Solved: {}".format("Yes" in str_line))
+                    if "Yes" in str_line:
+                        completed_lvl_count += 1
                 elif "failed to parse" in str_line:
                     print("[OOPS] Server failed to load file")
                 elif "timed out" in str_line:
@@ -55,6 +58,7 @@ def test_levels(levels, is_dir, gui, timeout):
             p.kill()
         else:
             print("NOT FOUND: {}\n".format(lvl))
+    print("Levels completed: {}/{}".format(completed_lvl_count, len(levels)))
 
 def main(args):
     if args.lvls is not None:
