@@ -114,15 +114,29 @@ class Agent:
 
                         # When a box should be pulled, the direction needs to be mirrored because e.g. Pull(S,S) is invalid
                         if agent_dir_value[1] > box_dir_value[1] and not flip_transition or is_agent_on_goal:
+                            is_pull_flip_needed = True
                             # Check for possibility of flipping to push
                             zero_count = Counter(elem[1] for elem in agent_dir_values)[0]
                             if zero_count < 2:
                                 # Make sure the chosen direction will not be in the direction of the box
                                 for i in range(1, len(agent_dir_values)):
                                     item = agent_dir_values[i]
+                                    #if item[2][0] != c_box[0] and item[2][1] != c_box[1]:
                                     if DIR_MIRROR.get(item[0]) is not box_dir_value[0]:
                                         agent_dir_value = item
                                         flip_transition = True
+
+                                        # Edge case: New agent dir is same as box dir and the action should not be pull
+                                        # In this case, no need to flip box dir below
+                                        if agent_dir_value[0] is box_dir_value[0]:
+                                            if agent_dir_value[0] == 'N' and agent[0] > c_box[0]:
+                                                is_pull_flip_needed = False
+                                            elif agent_dir_value[0] == 'E' and agent[1] < c_box[1]:
+                                                is_pull_flip_needed = False
+                                            elif agent_dir_value[0] == 'S' and agent[0] < c_box[0]:
+                                                is_pull_flip_needed = False
+                                            elif agent_dir_value[0] == 'W' and agent[1] > c_box[1]:
+                                                is_pull_flip_needed = False
                                         break
 
                             # Make sure the box direction is to agent's current pos.
@@ -131,7 +145,8 @@ class Agent:
                                 box_dir_value = box_dir_values[1]
 
                             # Mirror box direction for server to interpret
-                            box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1])
+                            if is_pull_flip_needed:
+                                box_dir_value = (DIR_MIRROR.get(box_dir_value[0]), box_dir_value[1], box_dir_value[2])
                         else:
                             if flip_transition:
                                 flip_transition = False
