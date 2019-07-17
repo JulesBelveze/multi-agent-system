@@ -129,6 +129,18 @@ class State:
                     return False
         return True
 
+    def is_no_object(self, row, col):
+        # checking if any agent is present
+        for key, agent in self.agents.items():
+            if row == agent[0] and col == agent[1]:
+                return False, "agent", agent
+        # checking if any box is present
+        for key, boxes in self.boxes.items():
+            for box in boxes:
+                if row == box[0] and col == box[1]:
+                    return False, "box", box
+        return True, None, None
+
     def can_agent_push_box(self, new_agent, box):
         return box[0] == new_agent[0] and box[1] == new_agent[1]
 
