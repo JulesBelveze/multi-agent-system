@@ -118,10 +118,10 @@ pull_possibilities = {
 
 # dictionary for push possibilities grouped by: agent_pos - box_pos
 push_possibilities = {
-    (0, -1): [Action(ActionType.Push, Direction.W, Direction.W),
+    (0, 1): [Action(ActionType.Push, Direction.W, Direction.W),
               Action(ActionType.Push, Direction.W, Direction.N),
               Action(ActionType.Push, Direction.W, Direction.S)],
-    (0, 1): [Action(ActionType.Push, Direction.E, Direction.E),
+    (0, -1): [Action(ActionType.Push, Direction.E, Direction.E),
              Action(ActionType.Push, Direction.E, Direction.N),
              Action(ActionType.Push, Direction.E, Direction.S)],
     (1, 0): [Action(ActionType.Push, Direction.N, Direction.N),
