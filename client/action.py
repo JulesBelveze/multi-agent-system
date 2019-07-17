@@ -3,6 +3,7 @@ class Direction:
     '''
     Do not instantiate outside this file
     '''
+
     def __init__(self, name: 'str', d_row: 'int', d_col: 'int'):
         self.name = name
         self.d_row = d_row
@@ -11,32 +12,38 @@ class Direction:
     def __repr__(self):
         return self.name
 
+
 Direction.N = Direction('N', -1, 0)
 Direction.E = Direction('E', 0, 1)
 Direction.S = Direction('S', 1, 0)
 Direction.W = Direction('W', 0, -1)
 Direction.H = Direction('H', 0, 0)
 
+
 class ActionType:
     Move = Push = Pull = None
     '''
     Do not instantiate outside this file
     '''
+
     def __init__(self, name: 'str'):
         self.name = name
 
     def __repr__(self):
         return self.name
 
+
 ActionType.Move = ActionType("Move")
 ActionType.Push = ActionType("Push")
 ActionType.Pull = ActionType("Pull")
 ActionType.NoOp = ActionType("NoOp")
 
+
 class Action:
     '''
     Do not instantiate outside this file
     '''
+
     def __init__(self, action_type: 'ActionType', agent_dir: 'Direction', box_dir: 'Direction'):
         self.action_type = action_type
         self.agent_dir = agent_dir
@@ -92,3 +99,43 @@ for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
 
 # Created a NoOp direction (H) so that it can have a key assigned
 ALL_ACTIONS[Direction.H] = [Action(ActionType.NoOp, None, None)]
+
+# dictionary for pull possibilities grouped by: agent_pos - box_pos
+pull_possibilities = {
+    (0, -1): [Action(ActionType.Pull, Direction.E, Direction.E),
+              Action(ActionType.Pull, Direction.N, Direction.E),
+              Action(ActionType.Pull, Direction.S, Direction.E)],
+    (0, 1): [Action(ActionType.Pull, Direction.W, Direction.W),
+             Action(ActionType.Pull, Direction.N, Direction.W),
+             Action(ActionType.Pull, Direction.S, Direction.W)],
+    (1, 0): [Action(ActionType.Pull, Direction.S, Direction.S),
+             Action(ActionType.Pull, Direction.E, Direction.S),
+             Action(ActionType.Pull, Direction.W, Direction.S)],
+    (-1, 0): [Action(ActionType.Pull, Direction.N, Direction.N),
+              Action(ActionType.Pull, Direction.E, Direction.N),
+              Action(ActionType.Pull, Direction.W, Direction.N)]
+}
+
+# dictionary for push possibilities grouped by: agent_pos - box_pos
+push_possibilities = {
+    (0, -1): [Action(ActionType.Push, Direction.W, Direction.W),
+              Action(ActionType.Push, Direction.W, Direction.N),
+              Action(ActionType.Push, Direction.W, Direction.S)],
+    (0, 1): [Action(ActionType.Push, Direction.E, Direction.E),
+             Action(ActionType.Push, Direction.E, Direction.N),
+             Action(ActionType.Push, Direction.E, Direction.S)],
+    (1, 0): [Action(ActionType.Push, Direction.N, Direction.N),
+             Action(ActionType.Push, Direction.N, Direction.W),
+             Action(ActionType.Push, Direction.N, Direction.E)],
+    (-1, 0): [Action(ActionType.Push, Direction.S, Direction.S),
+              Action(ActionType.Push, Direction.S, Direction.E),
+              Action(ActionType.Push, Direction.S, Direction.W)]
+}
+
+# list of move possibilities
+move_possibilities = [
+    Action(ActionType.Move, Direction.N, None),
+    Action(ActionType.Move, Direction.S, None),
+    Action(ActionType.Move, Direction.W, None),
+    Action(ActionType.Move, Direction.E, None)
+]
