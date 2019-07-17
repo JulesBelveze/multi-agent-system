@@ -9,25 +9,24 @@ cause_of_conflict = ['on_goal', 'block_road']
 
 
 class Conflict:
-    def __init__(self, current_state, agents_blocked, actions):
+    def __init__(self, current_state, agents_blocked, actions, len_paths_to_goal):
         self.current_state = current_state
         self.next_state = None
         self.agents_blocked = agents_blocked
         self.actions = actions
         self.agents = range(len(actions))
+        self.len_paths_to_goal = len_paths_to_goal
 
-    # def get_conflicts(self):
-    #     for agent_blocked in self.agents_blocked:
-    #         position = self.current_state.agents[agent_blocked]
-    #         action = self.actions(int(agent_blocked))
-    #         self._get_object_by_position(position, action)
-    #
-    #     sys.exit()
     def solve_conflicts(self):
-        print(self.get_conflicts())
+        conflicts = self._get_conflicts()
+
         sys.exit()
 
-    def get_conflicts(self):
+    def _manage_conflicts(self, conflicts):
+        '''changing actions of the conflicted agents'''
+
+
+    def _get_conflicts(self):
         '''Check if every agent's action is applicable in the current state and returns
         a list with the index of the agents' whose action are not applicable'''
         self.next_state = State(self.current_state)

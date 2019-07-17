@@ -76,6 +76,9 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
 
+    if not is_applicable:
+        next_state = current_state
+
     return index_non_applicable, next_state, is_applicable
 
 
@@ -125,6 +128,11 @@ def getLen(obj):
         return 0
     else:
         return len(obj)
+
+def isListEmpty(inList):
+    if isinstance(inList, list):
+        return all( map(isListEmpty, inList) )
+    return False
 
 
 def reassign_goals(agents, current_state: 'State', goal_state: 'State', walls, client: 'Client', goals_missing=None):

@@ -18,7 +18,7 @@ from message import msg_server_action
 
 from action import Direction
 from client_functions import add_padding_actions, get_box_key_by_position, check_action, missing_goals, getLen, \
-    reassign_goals
+    reassign_goals, isListEmpty
 
 
 class Client:
@@ -187,11 +187,15 @@ def main(args):
         msg_server_comment("Found {} solution(s)".format(len(solution)))
 
     nb_agents = len(solution)
-    solution = add_padding_actions(solution, nb_agents, current_state)
-
     printer = ";".join(['{}'] * nb_agents)
 
-    while len(solution[0]) > 0:
+    while not isListEmpty(solution):
+        for i, elt in enumerate(solution):
+            if len(elt) == 0:
+                padding_state = current_state
+                solution[i].append(padding_state)
+                solution[i][-1].action = Action(ActionType.NoOp, None, None)
+
         # grabbing state for each agent
         state = [elt[0] for elt in solution]
 
@@ -201,43 +205,14 @@ def main(args):
 
         # if there is a conflict between agents then we solve it
         if not is_applicable:
-            print(index_non_applicable)
-            sys.exit()
-            conflict = Conflict(current_state, index_non_applicable, action)
+            len_paths_to_goal = [len(path) for path in solution]
+            conflict = Conflict(current_state, index_non_applicable, action, len_paths_to_goal)
             conflict.solve_conflicts()
-
-        else:
-            for elt in solution:
-                elt.pop(0)
 
         msg_server_action(printer.format(*action))
 
-        # checking if goal state is reached once the action list is empty and
-        # checking reassigning the missing goals if it is not goal state
-        if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
-            goals_missing = missing_goals(current_state, starfish_client.goal_state)
-            new_solution = reassign_goals(
-                starfish_client.agents,
-                current_state,
-                starfish_client.goal_state,
-                walls,
-                starfish_client,
-                goals_missing
-            )
-
-            # goal state not reached but the action list is empty, meaning that
-            # the agents are somehow blocked
-            if sum([getLen(sol) for sol in new_solution]) == 0:
-                for i, agent in enumerate(starfish_client.agents):
-                    if not agent.has_goal():
-                        random_direct = random.choice([Direction.N, Direction.E, Direction.W, Direction.S])
-                        move = State(current_state)
-                        move.action = Action(ActionType.Move, random_direct, None)
-                        new_solution[i] = [move]
-
-            new_solution = add_padding_actions(new_solution, nb_agents, current_state)
-            for i in range(getLen(solution)):
-                solution[i].extend(new_solution[i])
+        for i, elt in enumerate(solution):
+            elt.pop(0)
 
         response = level_data.readline().rstrip()
         if 'false' in response:
