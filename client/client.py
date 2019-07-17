@@ -206,6 +206,9 @@ def main(args):
             conflict = Conflict(current_state, index_non_applicable, action)
             conflict.solve_conflicts()
 
+        else:
+            for elt in solution:
+                elt.pop(0)
 
         msg_server_action(printer.format(*action))
 
