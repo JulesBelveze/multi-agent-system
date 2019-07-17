@@ -16,6 +16,11 @@ def get_box_key_by_position(row, col, state: 'State'):
                 return (key, i)
     return None
 
+def get_agent_key_by_color(color, agents):
+    for key, item in agents.items():
+        if item[2] == color:
+            return key, item
+
 
 def check_action(actions, current_state: 'State', walls):
     '''Check if every agent's action is applicable in the current state and returns
@@ -80,6 +85,7 @@ def check_action(actions, current_state: 'State', walls):
         next_state = current_state
 
     return index_non_applicable, next_state, is_applicable
+
 
 
 def missing_goals(current_state, goal_state):

@@ -205,9 +205,8 @@ def main(args):
 
         # if there is a conflict between agents then we solve it
         if not is_applicable:
-            len_paths_to_goal = [len(path) for path in solution]
-            conflict = Conflict(current_state, index_non_applicable, action, len_paths_to_goal)
-            conflict.solve_conflicts()
+            conflict = Conflict(current_state, index_non_applicable, action, solution, walls)
+            conflict.handle_conflicts()
 
         msg_server_action(printer.format(*action))
 

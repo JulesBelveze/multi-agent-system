@@ -1,29 +1,46 @@
 import sys
-
+import numpy as np
 from state import State
-from action import ActionType
-from client_functions import get_box_key_by_position
+from action import ActionType, Action, Direction, pull_possibilities, push_possibilities, move_possibilities
+from client_functions import get_box_key_by_position, get_agent_key_by_color
 
 object_of_conflict = ['box', 'agent']
 cause_of_conflict = ['on_goal', 'block_road']
 
 
 class Conflict:
-    def __init__(self, current_state, agents_blocked, actions, len_paths_to_goal):
+    def __init__(self, current_state, agents_blocked, actions, solution, walls):
         self.current_state = current_state
         self.next_state = None
         self.agents_blocked = agents_blocked
         self.actions = actions
-        self.agents = range(len(actions))
-        self.len_paths_to_goal = len_paths_to_goal
+        self.solution = solution
+        self.walls = walls
 
-    def solve_conflicts(self):
+    def handle_conflicts(self):
         conflicts = self._get_conflicts()
 
+        for conflict in conflicts:
+            print(conflict)
+            self._solve_conflict(conflict)
         sys.exit()
 
-    def _manage_conflicts(self, conflicts):
-        '''changing actions of the conflicted agents'''
+    def _solve_conflict(self, conflict):
+        '''changing actions of the agents conflicting by trying to remove them from
+        the path'''
+        agent, obj_type, (obj_row, obj_col, obj_color) = conflict[0], conflict[1], conflict[2]
+
+        agent_states = self.solution[int(agent)]
+        agent_positions = [state.agents[agent] for state in agent_states]
+
+        if obj_type == "box":
+            key_agent_in_charge, agent_in_charge = get_agent_key_by_color(obj_color, self.current_state.agents)
+            pr = tuple(np.subtract((agent_in_charge[0], agent_in_charge[1]), (obj_row, obj_col)))
+
+            actions = pull_possibilities[pr] + push_possibilities[pr]
+            for action in actions:
+                _, is_applicable = self.check_action(action, key_agent_in_charge)
+                print(action, is_applicable)
 
 
     def _get_conflicts(self):
@@ -87,3 +104,63 @@ class Conflict:
                         conflicts.append([i, type_obj, obj])
 
         return conflicts
+
+    def check_action(self, action, agent):
+        '''Check if every agent's action is applicable in the current state and returns
+        a list with the index of the agents' whose action are not applicable'''
+        next_state = State(self.current_state)
+        is_applicable = True
+
+        # defining a server-like state where we'll create fictive agent to keep track
+        # of the previous agent position
+        server_state = State(self.current_state)
+
+        i = str(agent)
+        row, col, color = self.current_state.agents[i]
+
+        new_agent_row = row + action.agent_dir.d_row
+        new_agent_col = col + action.agent_dir.d_col
+
+        if action.action_type is ActionType.Move:
+            if server_state.is_free(self.walls, new_agent_row, new_agent_col):
+                server_state.agents[i + i] = (row, col, color)
+                server_state.agents[i] = (new_agent_row, new_agent_col, color)
+                next_state.agents[i] = (new_agent_row, new_agent_col, color)
+            else:
+                is_applicable = False
+
+        elif action.action_type is ActionType.Push:
+            box_key = get_box_key_by_position(new_agent_row, new_agent_col, next_state)
+            new_box_row = new_agent_row + action.box_dir.d_row
+            new_box_col = new_agent_col + action.box_dir.d_col
+            if server_state.is_free(self.walls, new_box_row, new_box_col):
+                server_state.agents[i + i] = (row, col, color)
+                server_state.agents[i] = (new_agent_row, new_agent_col, color)
+                server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+                next_state.agents[i] = (new_agent_row, new_agent_col, color)
+                next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+            else:
+                is_applicable = False
+
+        elif action.action_type is ActionType.Pull:
+            box_row = row + action.box_dir.d_row
+            box_col = col + action.box_dir.d_col
+            box_key = get_box_key_by_position(box_row, box_col, next_state)
+
+            new_box_row = box_row + action.box_dir.d_row * -1
+            new_box_col = box_col + action.box_dir.d_col * -1
+            if server_state.is_free(self.walls, new_agent_row, new_agent_col):
+                server_state.agents[i] = (new_agent_row, new_agent_col, color)
+                server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+                next_state.agents[i] = (new_agent_row, new_agent_col, color)
+                next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+            else:
+                is_applicable = False
+
+        if not is_applicable:
+            next_state = self.current_state
+
+        return next_state, is_applicable
+
+    def _on_path(self, path, position):
+        pass
