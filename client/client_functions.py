@@ -46,6 +46,7 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
             elif action.action_type is ActionType.Push:
+
                 box_key = get_box_key_by_position(new_agent_row, new_agent_col, next_state)
                 new_box_row = new_agent_row + action.box_dir.d_row
                 new_box_col = new_agent_col + action.box_dir.d_col

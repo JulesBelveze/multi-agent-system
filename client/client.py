@@ -10,6 +10,7 @@ from agent import Agent
 from state import State
 from action import Action
 from action import ActionType
+from conflict import Conflict
 
 from message import msg_server_err
 from message import msg_server_comment
@@ -173,6 +174,7 @@ def main(args):
     walls = starfish_client.walls
 
     # Solve and print
+    # TODO: configuration when an agent is blocking all the others
     solution = starfish_client.solve_level()
     if sum([len(sol) for sol in solution]) == 0:
         for i, agent in enumerate(starfish_client.agents):
@@ -197,29 +199,13 @@ def main(args):
         index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
         msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
 
-        # if there is a conflict between agents then we recompute a new goal for each agent
+        # if there is a conflict between agents then we solve it
         if not is_applicable:
-            for key_agent in index_non_applicable:
-                action[int(key_agent)] = ActionType.NoOp
-            msg_server_comment("Switching to action: " + printer.format(*action))
+            print(index_non_applicable)
+            sys.exit()
+            conflict = Conflict(current_state, index_non_applicable, action)
+            conflict.solve_conflicts()
 
-            new_solution = reassign_goals(
-                starfish_client.agents,
-                current_state,
-                starfish_client.goal_state,
-                walls,
-                starfish_client
-            )
-            new_solution = add_padding_actions(new_solution, nb_agents, current_state)
-
-            # removing the actions from previous goal and adding the ones from the new goal
-            for i in range(len(solution)):
-                solution[i].clear()
-                solution[i].extend(new_solution[i])
-        else:
-            # removing the accomplished actions of each agent
-            for elt in solution:
-                elt.pop(0)
 
         msg_server_action(printer.format(*action))
 
