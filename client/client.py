@@ -11,6 +11,7 @@ from state import State
 from action import Action
 from action import ActionType
 from conflict import Conflict
+from cooperation import Cooperation
 
 from message import msg_server_err
 from message import msg_server_comment
@@ -145,7 +146,6 @@ class Client:
             for i, agent in enumerate(self.agents):
                 if not agent.has_goal():
                     solutions.insert(i, [])
-
         return solutions
 
 
@@ -176,15 +176,10 @@ def main(args):
     # Solve and print
     # TODO: configuration when an agent is blocking all the others
     solution = starfish_client.solve_level()
-    if sum([len(sol) for sol in solution]) == 0:
-        for i, agent in enumerate(starfish_client.agents):
-            if not agent.has_goal():
-                random_direct = random.choice([Direction.N, Direction.E, Direction.W, Direction.S])
-                move = State(current_state)
-                move.action = Action(ActionType.Move, random_direct, None)
-                solution[i] = [move]
-    else:
-        msg_server_comment("Found {} solution(s)".format(len(solution)))
+    if isListEmpty(solution):
+        coop = Cooperation(current_state, starfish_client.goal_state)
+        queries = coop.get_needed_coop()
+        print(queries)
 
     nb_agents = len(solution)
     printer = ";".join(['{}'] * nb_agents)
@@ -220,15 +215,17 @@ def main(args):
         if not is_applicable:
             conflict = Conflict(current_state, index_non_applicable, joint_action, solution, walls)
             agents, actions = conflict.handle_conflicts()
-            joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
-            joint_action[int(agents)] = actions
 
-            # forgetting goal in order to help fix the conflict
-            padding_state = current_state
-            solution[int(agents)] = [padding_state]
-            solution[int(agents)][-1].action = Action(ActionType.NoOp, None, None)
-            solution[int(agents)].append(solution[int(agents)][-1])
-            starfish_client.agents[int(agents)].forget_goal()
+            joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
+            for (agent, action) in zip(agents, actions):
+                joint_action[int(agent)] = action
+
+                # forgetting goal in order to help fix the conflict
+                padding_state = current_state
+                solution[int(agent)] = [padding_state]
+                solution[int(agent)][-1].action = Action(ActionType.NoOp, None, None)
+                solution[int(agent)].append(solution[int(agent)][-1])
+                starfish_client.agents[int(agent)].forget_goal()
 
             _, current_state, _ = check_action(joint_action, current_state, walls)
             msg_server_comment("New action: " + printer.format(*joint_action))

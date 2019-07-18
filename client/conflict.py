@@ -21,11 +21,11 @@ class Conflict:
         conflicts = self._get_conflicts()
         agents, actions = [], []
         for conflict in conflicts:
-            # print(conflict)
+            print(conflict)
             agent, new_action = self._solve_conflict(conflict)
             agents.append(agent)
             actions.append(new_action)
-        return agent, new_action
+        return agents, actions
 
     def _solve_conflict(self, conflict):
         '''changing actions of the agents conflicting by trying to remove them from
@@ -35,6 +35,7 @@ class Conflict:
         agent_states = self.solution[int(agent)]
         agent_positions = [state.agents[agent] for state in agent_states]
 
+        # case when a box is blocking
         if obj_type == "box":
             obj_row, obj_col, obj_color = self.current_state.boxes[obj[0]][obj[1]]
             key_agent_in_charge, agent_in_charge = get_agent_key_by_color(obj_color, self.current_state.agents)
@@ -50,6 +51,21 @@ class Conflict:
 
                     if not is_agent_on_path and not is_box_on_path:
                         return key_agent_in_charge, action
+
+        # case when an agent is blocking
+        elif obj_type == "agent":
+            obj_row, obj_col, obj_color = self.current_state.agents[obj[0]]
+            actions = move_possibilities
+            for action in actions:
+                is_applicable, next_pos_agent, _, next_state = self.check_action(action, obj[0])
+                if is_applicable:
+                    is_agent_on_path = self._is_on_path(agent_positions, next_pos_agent)
+
+                    if not is_agent_on_path:
+                        return obj[0], action
+
+
+
 
     def _get_conflicts(self):
         '''Check if every agent's action is applicable in the current state and returns

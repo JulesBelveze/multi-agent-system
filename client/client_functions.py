@@ -21,6 +21,9 @@ def get_agent_key_by_color(color, agents):
         if item[2] == color:
             return key, item
 
+def get_box_color_by_box_letter(boxes, letter):
+    return boxes[letter][0][2]
+
 
 def check_action(actions, current_state: 'State', walls):
     '''Check if every agent's action is applicable in the current state and returns
