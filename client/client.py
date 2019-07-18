@@ -17,7 +17,7 @@ from message import msg_server_comment
 from message import msg_server_action
 
 from action import Direction
-from client_functions import add_padding_actions, get_box_key_by_position, check_action, missing_goals, getLen, \
+from client_functions import add_padding_actions, get_box_key_by_position, check_action, get_missing_goals, getLen, \
     reassign_goals, isListEmpty
 
 
@@ -170,7 +170,7 @@ def main(args):
 
     # Create client using server messages
     starfish_client = Client(level_data)
-    current_state = deepcopy(starfish_client.initial_state)
+    current_state = starfish_client.initial_state
     walls = starfish_client.walls
 
     # Solve and print
@@ -190,11 +190,24 @@ def main(args):
     printer = ";".join(['{}'] * nb_agents)
 
     while not isListEmpty(solution):
+        missing_goals = get_missing_goals(current_state, starfish_client.goal_state)
         for i, elt in enumerate(solution):
-            if len(elt) == 0:
+            if len(elt) == 0 and str(i) not in missing_goals:
                 padding_state = current_state
                 solution[i].append(padding_state)
                 solution[i][-1].action = Action(ActionType.NoOp, None, None)
+
+            elif len(elt) == 0 and str(i) in missing_goals and not starfish_client.agents[i].has_goal():
+                starfish_client.agents[i].current_state = current_state
+                starfish_client.agents[i].assign_goal(starfish_client.goal_state, (missing_goals[str(i)][0], 0))
+                new_path = starfish_client.agents[i].find_path_to_goal(starfish_client.walls)
+                # print(new_path)
+                if new_path is not None and len(new_path) > 0:
+                    solution[i].extend(new_path)
+                else:
+                    padding_state = current_state
+                    solution[i].append(padding_state)
+                    solution[i][-1].action = Action(ActionType.NoOp, None, None)
 
         # grabbing state for each agent
         state = [elt[0] for elt in solution]
@@ -203,12 +216,21 @@ def main(args):
         index_non_applicable, current_state, is_applicable = check_action(joint_action, current_state, walls)
         msg_server_comment(printer.format(*joint_action) + " - applicable: {}".format(is_applicable))
 
-        # if there is a conflict between agents then we solve it
+        # if there is a conflict between agents
         if not is_applicable:
             conflict = Conflict(current_state, index_non_applicable, joint_action, solution, walls)
             agents, actions = conflict.handle_conflicts()
             joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
-            joint_action[int(agents)] = actions            # sys.exit()
+            joint_action[int(agents)] = actions
+
+            # forgetting goal in order to help fix the conflict
+            padding_state = current_state
+            solution[int(agents)] = [padding_state]
+            solution[int(agents)][-1].action = Action(ActionType.NoOp, None, None)
+            solution[int(agents)].append(solution[int(agents)][-1])
+            starfish_client.agents[int(agents)].forget_goal()
+
+            _, current_state, _ = check_action(joint_action, current_state, walls)
             msg_server_comment("New action: " + printer.format(*joint_action))
 
         msg_server_action(printer.format(*joint_action))

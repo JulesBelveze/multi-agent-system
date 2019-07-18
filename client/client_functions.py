@@ -88,7 +88,7 @@ def check_action(actions, current_state: 'State', walls):
 
 
 
-def missing_goals(current_state, goal_state):
+def get_missing_goals(current_state, goal_state):
     '''Return the index of the agents that haven't reached their goal and the
     corresponding box, ex: {'0': ('A', (3, 9, 'red'))}'''
     current_boxes = current_state.boxes

@@ -1,5 +1,5 @@
-from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
 import copy
+from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
 
 
 class State:
@@ -133,13 +133,27 @@ class State:
         # checking if any agent is present
         for key, agent in self.agents.items():
             if row == agent[0] and col == agent[1]:
-                return False, "agent", agent
+                return False, "agent", self._get_agent_key_by_color(agent[2])
         # checking if any box is present
         for key, boxes in self.boxes.items():
             for box in boxes:
                 if row == box[0] and col == box[1]:
-                    return False, "box", box
+                    return False, "box", self._get_box_key_by_position(box[0], box[1])
         return True, None, None
+
+    def _get_box_key_by_position(self, row, col):
+        '''Return the key of a box at a given position'''
+        for key, boxes in self.boxes.items():
+            for i, box in enumerate(boxes):
+                row_box, col_box, _ = box
+                if row == row_box and col == col_box:
+                    return key, i
+        return None
+
+    def _get_agent_key_by_color(self, color):
+        for key, item in self.agents.items():
+            if item[2] == color:
+                return key, item
 
     def can_agent_push_box(self, new_agent, box):
         return box[0] == new_agent[0] and box[1] == new_agent[1]

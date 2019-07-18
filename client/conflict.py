@@ -21,6 +21,7 @@ class Conflict:
         conflicts = self._get_conflicts()
         agents, actions = [], []
         for conflict in conflicts:
+            # print(conflict)
             agent, new_action = self._solve_conflict(conflict)
             agents.append(agent)
             actions.append(new_action)
@@ -29,13 +30,15 @@ class Conflict:
     def _solve_conflict(self, conflict):
         '''changing actions of the agents conflicting by trying to remove them from
         the path'''
-        agent, obj_type, (obj_row, obj_col, obj_color) = conflict[0], conflict[1], conflict[2]
+        agent, obj_type, obj = conflict[0], conflict[1], conflict[2]
 
         agent_states = self.solution[int(agent)]
         agent_positions = [state.agents[agent] for state in agent_states]
 
         if obj_type == "box":
+            obj_row, obj_col, obj_color = self.current_state.boxes[obj[0]][obj[1]]
             key_agent_in_charge, agent_in_charge = get_agent_key_by_color(obj_color, self.current_state.agents)
+
             pr = tuple(np.subtract((agent_in_charge[0], agent_in_charge[1]), (obj_row, obj_col)))
 
             actions = pull_possibilities[pr] + push_possibilities[pr]
