@@ -19,11 +19,12 @@ class Conflict:
 
     def handle_conflicts(self):
         conflicts = self._get_conflicts()
-
+        agents, actions = [], []
         for conflict in conflicts:
-            print(conflict)
-            self._solve_conflict(conflict)
-        sys.exit()
+            agent, new_action = self._solve_conflict(conflict)
+            agents.append(agent)
+            actions.append(new_action)
+        return agent, new_action
 
     def _solve_conflict(self, conflict):
         '''changing actions of the agents conflicting by trying to remove them from
@@ -39,9 +40,13 @@ class Conflict:
 
             actions = pull_possibilities[pr] + push_possibilities[pr]
             for action in actions:
-                _, is_applicable = self.check_action(action, key_agent_in_charge)
-                print(action, is_applicable)
+                is_applicable, next_pos_agent, next_pos_box, next_state = self.check_action(action, key_agent_in_charge)
+                if is_applicable:
+                    is_agent_on_path = self._is_on_path(agent_positions, next_pos_agent)
+                    is_box_on_path = self._is_on_path(agent_positions, next_pos_box)
 
+                    if not is_agent_on_path and not is_box_on_path:
+                        return key_agent_in_charge, action
 
     def _get_conflicts(self):
         '''Check if every agent's action is applicable in the current state and returns
@@ -110,6 +115,7 @@ class Conflict:
         a list with the index of the agents' whose action are not applicable'''
         next_state = State(self.current_state)
         is_applicable = True
+        box_next_pos = None  # next position of box if it is different, otherwise None
 
         # defining a server-like state where we'll create fictive agent to keep track
         # of the previous agent position
@@ -139,6 +145,7 @@ class Conflict:
                 server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 next_state.agents[i] = (new_agent_row, new_agent_col, color)
                 next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+                box_next_pos = (new_box_row, new_box_col, color)
             else:
                 is_applicable = False
 
@@ -154,13 +161,18 @@ class Conflict:
                 server_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
                 next_state.agents[i] = (new_agent_row, new_agent_col, color)
                 next_state.boxes[box_key[0]][box_key[1]] = (new_box_row, new_box_col, color)
+                box_next_pos = (new_box_row, new_box_col, color)
             else:
                 is_applicable = False
 
         if not is_applicable:
             next_state = self.current_state
 
-        return next_state, is_applicable
+        return is_applicable, next_state.agents[i], box_next_pos, next_state
 
-    def _on_path(self, path, position):
-        pass
+    def _is_on_path(self, path, pos):
+        '''check if a position is on an agent path'''
+        future_positions = [(elt[0], elt[1]) for elt in path]
+        if (pos[0], pos[1]) in future_positions:
+            return True
+        return False

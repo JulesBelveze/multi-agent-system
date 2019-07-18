@@ -199,23 +199,27 @@ def main(args):
         # grabbing state for each agent
         state = [elt[0] for elt in solution]
 
-        action = [agent.action for agent in state]
-        index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
-        msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
+        joint_action = [agent.action for agent in state]
+        index_non_applicable, current_state, is_applicable = check_action(joint_action, current_state, walls)
+        msg_server_comment(printer.format(*joint_action) + " - applicable: {}".format(is_applicable))
 
         # if there is a conflict between agents then we solve it
         if not is_applicable:
-            conflict = Conflict(current_state, index_non_applicable, action, solution, walls)
-            conflict.handle_conflicts()
+            conflict = Conflict(current_state, index_non_applicable, joint_action, solution, walls)
+            agents, actions = conflict.handle_conflicts()
+            joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
+            joint_action[int(agents)] = actions            # sys.exit()
+            msg_server_comment("New action: " + printer.format(*joint_action))
 
-        msg_server_action(printer.format(*action))
+        msg_server_action(printer.format(*joint_action))
 
-        for i, elt in enumerate(solution):
-            elt.pop(0)
+        if is_applicable:
+            for i, elt in enumerate(solution):
+                elt.pop(0)
 
         response = level_data.readline().rstrip()
         if 'false' in response:
-            msg_server_err("Server answered with error to the action " + printer.format(*action))
+            msg_server_err("Server answered with error to the action " + printer.format(*joint_action))
 
 
 if __name__ == "__main__":
