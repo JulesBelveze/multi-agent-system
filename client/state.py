@@ -1,3 +1,4 @@
+import random
 import copy
 from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
 
@@ -112,6 +113,14 @@ class State:
         child.depth += 1
         child.action = action
         return child
+
+    def get_random_free_cell(self, max_row, max_col, walls, max_len=5):
+        '''function returning a random free cell in the map'''
+        is_free = False
+        while not is_free:
+            random_row, random_col = random.randint(1, max_row - 1), random.randint(1, max_col - 1)
+            is_free = self.is_free(walls, random_row, random_col)
+        return random_row, random_col
 
     def is_free(self, walls, row, col):
         '''Function checking if a given position is free'''

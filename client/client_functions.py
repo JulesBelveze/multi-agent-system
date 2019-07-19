@@ -4,6 +4,7 @@ from state import State
 from action import Action
 from agent import Agent
 
+from copy import deepcopy
 from action import ActionType
 
 
@@ -16,10 +17,12 @@ def get_box_key_by_position(row, col, state: 'State'):
                 return (key, i)
     return None
 
+
 def get_agent_key_by_color(color, agents):
     for key, item in agents.items():
         if item[2] == color:
             return key, item
+
 
 def get_box_color_by_box_letter(boxes, letter):
     return boxes[letter][0][2]
@@ -90,7 +93,6 @@ def check_action(actions, current_state: 'State', walls):
     return index_non_applicable, next_state, is_applicable
 
 
-
 def get_missing_goals(current_state, goal_state):
     '''Return the index of the agents that haven't reached their goal and the
     corresponding box, ex: {'0': ('A', (3, 9, 'red'))}'''
@@ -132,15 +134,23 @@ def add_padding_actions(solution, nb_agents, current_state):
     return solution
 
 
+def get_noop(current_state, nb_actions):
+    padding_state = deepcopy(current_state)
+    actions = [padding_state] * nb_actions
+    padding_state.action = Action(ActionType.NoOp, None, None)
+    return actions
+
+
 def getLen(obj):
     if obj is None:
         return 0
     else:
         return len(obj)
 
+
 def isListEmpty(inList):
     if isinstance(inList, list):
-        return all( map(isListEmpty, inList) )
+        return all(map(isListEmpty, inList))
     return False
 
 

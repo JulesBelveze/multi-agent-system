@@ -19,7 +19,7 @@ from message import msg_server_action
 
 from action import Direction
 from client_functions import add_padding_actions, get_box_key_by_position, check_action, get_missing_goals, getLen, \
-    reassign_goals, isListEmpty
+    reassign_goals, isListEmpty, get_noop
 
 
 class Client:
@@ -148,6 +148,37 @@ class Client:
                     solutions.insert(i, [])
         return solutions
 
+    def queries_to_action(self, queries, state: 'State'):
+        joint_action = [[]] * len(self.agents)
+
+        for query in queries:
+            print(query)
+            acting_query, waiting_query = query.split("|")
+            acting_query = acting_query.strip().split(" ")
+
+            waiting_agent = waiting_query.strip().split(" ")[1]
+            acting_agent = acting_query[1]
+
+            if acting_query[2] == "box":
+                box_to_move = tuple(acting_query[3].split(','))
+                new_row, new_col = state.get_random_free_cell(self.max_row, self.max_col, self.walls)
+
+                # defining a fictive goal state for the acting agent
+                hacked_goal = deepcopy(self.goal_state)
+                try:
+                    hacked_goal.boxes[box_to_move[0]][int(box_to_move[1])].append((new_row, new_col, box_to_move[2]))
+                except KeyError:
+                    hacked_goal.boxes[box_to_move[0]] = [(new_row, new_col, box_to_move[2])]
+
+                self.agents[int(waiting_agent)].forget_goal()
+                self.agents[int(acting_agent)].assign_goal(hacked_goal, (box_to_move[0], int(box_to_move[1])))
+                result = self.agents[int(acting_agent)].find_path_to_goal(self.walls)
+
+                joint_action[int(acting_agent)] = result
+                joint_action[int(waiting_agent)] = get_noop(state, len(result))
+
+        return joint_action
+
 
 def main(args):
     level_data = None
@@ -179,11 +210,12 @@ def main(args):
     if isListEmpty(solution):
         coop = Cooperation(current_state, starfish_client.goal_state)
         queries = coop.get_needed_coop()
-        print(queries)
+        solution = starfish_client.queries_to_action(queries, current_state)
 
     nb_agents = len(solution)
     printer = ";".join(['{}'] * nb_agents)
 
+    print(starfish_client.agents[0].has_goal())
     while not isListEmpty(solution):
         missing_goals = get_missing_goals(current_state, starfish_client.goal_state)
         for i, elt in enumerate(solution):
@@ -192,7 +224,7 @@ def main(args):
                 solution[i].append(padding_state)
                 solution[i][-1].action = Action(ActionType.NoOp, None, None)
 
-            elif len(elt) == 0 and str(i) in missing_goals and not starfish_client.agents[i].has_goal():
+            elif len(elt) == 1 and str(i) in missing_goals and not starfish_client.agents[i].has_goal():
                 starfish_client.agents[i].current_state = current_state
                 starfish_client.agents[i].assign_goal(starfish_client.goal_state, (missing_goals[str(i)][0], 0))
                 new_path = starfish_client.agents[i].find_path_to_goal(starfish_client.walls)
