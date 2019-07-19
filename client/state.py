@@ -1,7 +1,7 @@
 import random
 import operator
 import copy
-from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
+from action import DIR_LOOKUP, ALL_ACTIONS, ActionType, get_direction_moving_coord
 
 
 class State:
@@ -153,6 +153,7 @@ class State:
         return True
 
     def is_no_object(self, row, col):
+        '''same without checking the presence of walls'''
         # checking if any agent is present
         for key, agent in self.agents.items():
             if row == agent[0] and col == agent[1]:
@@ -163,6 +164,34 @@ class State:
                 if row == box[0] and col == box[1]:
                     return False, "box", self._get_box_key_by_position(box[0], box[1])
         return True, None, None
+
+    def get_freeing_actions(self, agent_key, walls):
+        '''finding actions to free others agents.
+        Agents will be free as soon as the blocking has three empty cells around him'''
+        moves, list_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)], []
+        agent_row, agent_col, agent_color = self.agents[agent_key]
+
+        lambda_is_free = lambda x: self.is_free(walls, x[0], x[1])
+        is_blocking = True
+        previous_direction = (1, 0)  # used to try the same direction at first
+        while is_blocking:
+
+            next_pos = [(elt[0] + agent_row, elt[1] + agent_col) for elt in moves]
+            free_positions = list(map(lambda_is_free, next_pos))
+
+            vertically_free, horizontally_free = free_positions[:2], free_positions[2:]
+            if sum(horizontally_free) == 1:
+                move = moves[2 + horizontally_free.index(True)]
+            elif sum(horizontally_free) == 2:
+                move = moves[0] if previous_direction == moves[0] else moves[1]
+
+            previous_direction = move
+            agent_row, agent_col = move[0] + agent_row, move[1] + agent_col
+            list_directions.append(get_direction_moving_coord(move))
+
+            if sum(vertically_free) + sum(horizontally_free) > 2:
+                is_blocking = False
+        return list_directions
 
     def _get_box_key_by_position(self, row, col):
         '''Return the key of a box at a given position'''

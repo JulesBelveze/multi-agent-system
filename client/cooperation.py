@@ -1,18 +1,20 @@
 from state import State
 from client_functions import get_box_color_by_box_letter, get_agent_key_by_color
-
+import operator
 
 class Cooperation:
-    def __init__(self, current_state: 'State', goal_state: 'State'):
+    def __init__(self, current_state: 'State', goal_state: 'State', walls):
         self.sender = None
         self.receiver = None
         self.queries = []
         self.state = current_state
         self.goal_state = goal_state
+        self.walls = walls
 
     def get_needed_coop(self):
         boxes_on_goal, screwed_boxes1 = self.is_any_box_on_goal()
         agents_on_goal, screwed_boxes2 = self.is_any_agent_on_goal()
+        blocking_agents = self.is_any_agent_blocking()
 
         # is any box on goal
         for (key_box, index_box), key_box_screwed in zip(boxes_on_goal, screwed_boxes1):
@@ -34,10 +36,35 @@ class Cooperation:
             query = "agent " + key_agent + " - | agent " + agent_screwed[0]
             self.queries.append(query)
 
+        # is any agent blocking
+        for key_agent in blocking_agents:
+            query = "agent " + key_agent + " blocking | agent *"
+            self.queries.append(query)
+
         return self.queries
 
     def is_any_agent_blocking(self):
-        raise NotImplementedError
+        '''checking if any agent is blocking the way'''
+        posible_dir = [(1,0), (-1,0), (0,1), (0,-1)] # S, N, E, W
+        blocking_agents = []
+        positions_agents = {key: (elt[0], elt[1]) for key, elt in self.state.agents.items()}
+
+        for key_agent, pos in positions_agents.items():
+            is_free_neighbouring_cells = []
+            for dir in posible_dir:
+                new_row, new_col = tuple(map(operator.add, pos, dir))
+                is_free_neighbouring_cells.append(self.state.is_free(self.walls, new_row, new_col))
+
+            # meaning the agent cannot move
+            if sum(is_free_neighbouring_cells) == 0:
+                continue
+            # meaning the agent is either vertically or horizontally trapped
+            elif sum(is_free_neighbouring_cells[:2]) == 0 or sum(is_free_neighbouring_cells) == 0:
+                blocking_agents.append(key_agent)
+
+        return blocking_agents
+
+
 
     def is_any_box_blocking(self):
         raise NotImplementedError
@@ -64,14 +91,14 @@ class Cooperation:
 
     def is_any_agent_on_goal(self):
         '''checking if any agent is on a goal cell'''
-        states_agents = self.state.agents
+        state_agents = self.state.agents
         goal_state_boxes = self.goal_state.boxes
 
         agents_on_goal, screwed_boxes = [], []
         for key_goal, item_goal in goal_state_boxes.items():
             positions_goal = [(elt[0], elt[1]) for elt in item_goal]  # getting rid of the color
 
-            for key_agent, agent in states_agents.items():
+            for key_agent, agent in state_agents.items():
                 position_agent = (agent[0], agent[1])  # getting rid of the color
 
                 if position_agent in positions_goal:
