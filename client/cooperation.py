@@ -12,7 +12,7 @@ class Cooperation:
 
     def get_needed_coop(self):
         boxes_on_goal, screwed_boxes = self.is_any_box_on_goal()
-        # print(boxes_on_goal)
+
         for (key_box, index_box), key_box_screwed in zip(boxes_on_goal, screwed_boxes):
             box_color = get_box_color_by_box_letter(self.state.boxes, key_box)
             agent_in_charge = get_agent_key_by_color(box_color, self.state.agents)

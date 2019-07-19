@@ -2,9 +2,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from copy import deepcopy
 import numpy as np
-import random
 import sys
-import smt
 
 from agent import Agent
 from state import State
@@ -152,7 +150,6 @@ class Client:
         joint_action = [[]] * len(self.agents)
 
         for query in queries:
-            print(query)
             acting_query, waiting_query = query.split("|")
             acting_query = acting_query.strip().split(" ")
 
@@ -183,21 +180,9 @@ class Client:
 def main(args):
     level_data = None
 
-    if args.debugLevel is not None:
-        level_name = args.debugLevel
-        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
-        print("Loading level:", level_name)
-
-        level_data = smt.sim_load_lvl(level_name)
-        if level_data is None:
-            print("Failed to load level. Quitting...")
-            return
-
-        print("Level loaded successfully!")
-    else:
-        # Read server messages from stdin.
-        msg_server_action("Starfish")
-        level_data = sys.stdin
+    # Read server messages from stdin.
+    msg_server_action("Starfish")
+    level_data = sys.stdin
 
     # Create client using server messages
     starfish_client = Client(level_data)
@@ -215,7 +200,6 @@ def main(args):
     nb_agents = len(solution)
     printer = ";".join(['{}'] * nb_agents)
 
-    print(starfish_client.agents[0].has_goal())
     while not isListEmpty(solution):
         missing_goals = get_missing_goals(current_state, starfish_client.goal_state)
         for i, elt in enumerate(solution):
