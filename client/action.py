@@ -119,11 +119,11 @@ pull_possibilities = {
 # dictionary for push possibilities grouped by: agent_pos - box_pos
 push_possibilities = {
     (0, 1): [Action(ActionType.Push, Direction.W, Direction.W),
-              Action(ActionType.Push, Direction.W, Direction.N),
-              Action(ActionType.Push, Direction.W, Direction.S)],
+             Action(ActionType.Push, Direction.W, Direction.N),
+             Action(ActionType.Push, Direction.W, Direction.S)],
     (0, -1): [Action(ActionType.Push, Direction.E, Direction.E),
-             Action(ActionType.Push, Direction.E, Direction.N),
-             Action(ActionType.Push, Direction.E, Direction.S)],
+              Action(ActionType.Push, Direction.E, Direction.N),
+              Action(ActionType.Push, Direction.E, Direction.S)],
     (1, 0): [Action(ActionType.Push, Direction.N, Direction.N),
              Action(ActionType.Push, Direction.N, Direction.W),
              Action(ActionType.Push, Direction.N, Direction.E)],
@@ -139,3 +139,14 @@ move_possibilities = [
     Action(ActionType.Move, Direction.W, None),
     Action(ActionType.Move, Direction.E, None)
 ]
+
+
+def get_direction_moving_coord(dir):
+    dir_r, dir_c = dir
+    directions = {
+        (-1, 0): Direction.N,
+        (1, 0): Direction.S,
+        (0, 1): Direction.E,
+        (0, -1): Direction.W
+    }
+    return directions[(dir_r, dir_c)]

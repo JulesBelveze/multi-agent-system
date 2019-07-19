@@ -15,7 +15,7 @@ from message import msg_server_err
 from message import msg_server_comment
 from message import msg_server_action
 
-from action import Direction
+from action import Direction, get_direction_moving_coord
 from client_functions import add_padding_actions, get_box_key_by_position, check_action, get_missing_goals, getLen, \
     reassign_goals, isListEmpty, get_noop
 
@@ -156,6 +156,20 @@ class Client:
             waiting_agent = waiting_query.strip().split(" ")[1]
             acting_agent = acting_query[1]
 
+            # meaning an agent has to move
+            if acting_query[2] == "-":
+                row, col = state.agents[acting_agent][0], state.agents[acting_agent][1]
+                new_row, new_col = state.get_free_neighbouring_cell(self.walls, row, col)
+                moving_dir = get_direction_moving_coord(tuple(np.subtract((new_row, new_col), (row, col))))
+
+                padding_state = deepcopy(state)
+                joint_action[int(acting_agent)].append(padding_state)
+                joint_action[int(acting_agent)][-1].action = Action(ActionType.Move, moving_dir, None)
+
+                self.agents[int(waiting_agent)].forget_goal()
+                joint_action[int(waiting_agent)] = get_noop(state, 2)
+
+            # meaning a box has to be moved
             if acting_query[2] == "box":
                 box_to_move = tuple(acting_query[3].split(','))
                 new_row, new_col = state.get_random_free_cell(self.max_row, self.max_col, self.walls)
@@ -167,11 +181,11 @@ class Client:
                 except KeyError:
                     hacked_goal.boxes[box_to_move[0]] = [(new_row, new_col, box_to_move[2])]
 
-                self.agents[int(waiting_agent)].forget_goal()
                 self.agents[int(acting_agent)].assign_goal(hacked_goal, (box_to_move[0], int(box_to_move[1])))
                 result = self.agents[int(acting_agent)].find_path_to_goal(self.walls)
-
                 joint_action[int(acting_agent)] = result
+
+                self.agents[int(waiting_agent)].forget_goal()
                 joint_action[int(waiting_agent)] = get_noop(state, len(result))
 
         return joint_action
@@ -212,7 +226,7 @@ def main(args):
                 starfish_client.agents[i].current_state = current_state
                 starfish_client.agents[i].assign_goal(starfish_client.goal_state, (missing_goals[str(i)][0], 0))
                 new_path = starfish_client.agents[i].find_path_to_goal(starfish_client.walls)
-                # print(new_path)
+
                 if new_path is not None and len(new_path) > 0:
                     solution[i].extend(new_path)
                 else:

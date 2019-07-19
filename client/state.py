@@ -1,4 +1,5 @@
 import random
+import operator
 import copy
 from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
 
@@ -121,6 +122,19 @@ class State:
             random_row, random_col = random.randint(1, max_row - 1), random.randint(1, max_col - 1)
             is_free = self.is_free(walls, random_row, random_col)
         return random_row, random_col
+
+    def get_free_neighbouring_cell(self, walls, row, col):
+        '''get a free neighbouring cell from a given one'''
+        moves = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+        for move in moves:
+            new_row, new_col = tuple(map(operator.add, move, (row, col)))
+            # no need to check the if the value is inside the map because it will be
+            # a wall if so
+            if self.is_free(walls, new_row, new_col):
+                return new_row, new_col
+
+        return None
 
     def is_free(self, walls, row, col):
         '''Function checking if a given position is free'''
