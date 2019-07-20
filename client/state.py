@@ -1,7 +1,7 @@
 import random
 import operator
 import copy
-from action import DIR_LOOKUP, ALL_ACTIONS, ActionType, get_direction_moving_coord
+from action import DIR_LOOKUP, OPPOSITE_DIR, ALL_ACTIONS, ActionType, get_direction_moving_coord, Direction
 
 
 class State:
@@ -180,11 +180,23 @@ class State:
             free_positions = list(map(lambda_is_free, next_pos))
 
             vertically_free, horizontally_free = free_positions[:2], free_positions[2:]
-            if sum(horizontally_free) == 1:
+
+            if sum(horizontally_free) == 1 and sum(vertically_free) == 1:
+                move = moves[2 + horizontally_free.index(True)]
+                dir = get_direction_moving_coord(move)
+                previous_dir = get_direction_moving_coord(previous_direction)
+                if dir == OPPOSITE_DIR[previous_dir]:
+                    move = moves[vertically_free.index(True)]
+                # print(DIR_MIRROR[previous_direction.name])
+            elif sum(horizontally_free) == 1:
                 move = moves[2 + horizontally_free.index(True)]
             elif sum(horizontally_free) == 2:
+                move = moves[2] if previous_direction == moves[2] else moves[3]
+            elif sum(vertically_free) == 1:
+                move = moves[vertically_free.index(True)]
+            elif sum(vertically_free) == 2:
                 move = moves[0] if previous_direction == moves[0] else moves[1]
-
+            # print(move)
             previous_direction = move
             agent_row, agent_col = move[0] + agent_row, move[1] + agent_col
             list_directions.append(get_direction_moving_coord(move))

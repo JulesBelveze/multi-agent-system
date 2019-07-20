@@ -80,6 +80,13 @@ DIR_MIRROR[Direction.E.name] = Direction.W.name
 DIR_MIRROR[Direction.S.name] = Direction.N.name
 DIR_MIRROR[Direction.W.name] = Direction.E.name
 
+OPPOSITE_DIR = {
+    Direction.N : Direction.S,
+    Direction.S : Direction.N,
+    Direction.E : Direction.W,
+    Direction.W : Direction.E
+}
+
 # Map of all possible actions, grouped by agent movement directions
 ALL_ACTIONS = {}
 for agent_dir in (Direction.N, Direction.E, Direction.S, Direction.W):
