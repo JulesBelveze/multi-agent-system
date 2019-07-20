@@ -279,15 +279,25 @@ def main(args):
 
             joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
             for (agent, action) in zip(agents, actions):
-                joint_action[int(agent)] = action
+                if action is not None:
+                    joint_action[int(agent)] = action
+                    # forgetting goal in order to help fix the conflict
+                    padding_state = current_state
+                    solution[int(agent)] = [padding_state]
+                    solution[int(agent)][-1].action = Action(ActionType.NoOp, None, None)
+                    solution[int(agent)].append(solution[int(agent)][-1])
+                    starfish_client.agents[int(agent)].forget_goal()
 
-                # forgetting goal in order to help fix the conflict
-                padding_state = current_state
-                solution[int(agent)] = [padding_state]
-                solution[int(agent)][-1].action = Action(ActionType.NoOp, None, None)
-                solution[int(agent)].append(solution[int(agent)][-1])
-                starfish_client.agents[int(agent)].forget_goal()
+                else:
+                    box_key = starfish_client.agents[int(agent)].box_key
+                    starfish_client.agents[int(agent)] = Agent(current_state, agent)
+                    starfish_client.agents[int(agent)].assign_goal(starfish_client.goal_state, box_key)
+                    new_path_to_goal = starfish_client.agents[int(agent)].find_path_to_goal(walls)
+                    solution[int(agent)] = new_path_to_goal
+                    # print(new_path_to_goal)
+                    # sys.exit()
 
+            # updating state
             _, current_state, _ = check_action(joint_action, current_state, walls)
             msg_server_comment("New action: " + printer.format(*joint_action))
 

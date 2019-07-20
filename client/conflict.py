@@ -42,15 +42,20 @@ class Conflict:
 
             pr = tuple(np.subtract((agent_in_charge[0], agent_in_charge[1]), (obj_row, obj_col)))
 
-            actions = pull_possibilities[pr] + push_possibilities[pr]
-            for action in actions:
-                is_applicable, next_pos_agent, next_pos_box, next_state = self.check_action(action, key_agent_in_charge)
-                if is_applicable:
-                    is_agent_on_path = self._is_on_path(agent_positions, next_pos_agent)
-                    is_box_on_path = self._is_on_path(agent_positions, next_pos_box)
+            try:
+                # checking if an agent is close to the given box
+                actions = pull_possibilities[pr] + push_possibilities[pr]
+                for action in actions:
+                    is_applicable, next_pos_agent, next_pos_box, next_state = self.check_action(action, key_agent_in_charge)
+                    if is_applicable:
+                        is_agent_on_path = self._is_on_path(agent_positions, next_pos_agent)
+                        is_box_on_path = self._is_on_path(agent_positions, next_pos_box)
 
-                    if not is_agent_on_path and not is_box_on_path:
-                        return key_agent_in_charge, action
+                        if not is_agent_on_path and not is_box_on_path:
+                            return key_agent_in_charge, action
+            except KeyError:
+                # if not then we will recompute a new path to the goal for the given agent
+                return agent, None
 
         # case when an agent is blocking
         elif obj_type == "agent":
