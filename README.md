@@ -27,3 +27,7 @@ Example command execution:
 ```
 java -jar server.jar -l levels/SAExample.lvl -c "python client/client.py -rl_simple" -g 150 -t 300
 ```
+
+<h2> TODO </h2>
+<li> Conflict resolution</li>
+<li>Agent cooperation </li>

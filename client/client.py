@@ -2,22 +2,22 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from copy import deepcopy
 import numpy as np
-import random
 import sys
-import smt
 
 from agent import Agent
 from state import State
 from action import Action
 from action import ActionType
+from conflict import Conflict
+from cooperation import Cooperation
 
 from message import msg_server_err
 from message import msg_server_comment
 from message import msg_server_action
 
-from action import Direction
-from client_functions import add_padding_actions, get_box_key_by_position, check_action, missing_goals, getLen, \
-    reassign_goals
+from action import Direction, get_direction_moving_coord
+from client_functions import add_padding_actions, get_box_key_by_position, check_action, get_missing_goals, getLen, \
+    reassign_goals, isListEmpty, get_noop
 
 
 class Client:
@@ -144,115 +144,172 @@ class Client:
             for i, agent in enumerate(self.agents):
                 if not agent.has_goal():
                     solutions.insert(i, [])
-
         return solutions
+
+    def queries_to_action(self, queries, state: 'State'):
+        '''transforming users' queries to actions'''
+        joint_action = [[]] * len(self.agents)
+
+        for query in queries:
+            acting_query, waiting_query = query.split("|")
+            acting_query = acting_query.strip().split(" ")
+
+            waiting_agent = waiting_query.strip().split(" ")[1]
+            acting_agent = acting_query[1]
+
+            try:
+                if waiting_agent == "*":
+                    freeing_directions = state.get_freeing_actions(acting_agent, self.walls)
+
+                    for dir in freeing_directions:
+                        padding_state = deepcopy(state)
+                        joint_action[int(acting_agent)].append(padding_state)
+                        joint_action[int(acting_agent)][-1].action = Action(ActionType.Move, dir, None)
+
+                    for key, agent in state.agents.items():
+                        if key != acting_agent:
+                            self.agents[int(key)].forget_goal()
+                            joint_action[int(key)] = get_noop(state, len(freeing_directions) + 1)
+
+            except (ValueError, IndexError):
+                pass
+
+            try:
+                # meaning an agent has to move
+                if acting_query[2] == "-":
+                    row, col = state.agents[acting_agent][0], state.agents[acting_agent][1]
+                    new_row, new_col = state.get_free_neighbouring_cell(self.walls, row, col)
+                    moving_dir = get_direction_moving_coord(tuple(np.subtract((new_row, new_col), (row, col))))
+
+                    padding_state = deepcopy(state)
+                    joint_action[int(acting_agent)].append(padding_state)
+                    joint_action[int(acting_agent)][-1].action = Action(ActionType.Move, moving_dir, None)
+
+                    self.agents[int(waiting_agent)].forget_goal()
+                    joint_action[int(waiting_agent)] = get_noop(state, 2)
+            except (ValueError, IndexError):
+                pass
+
+            try:
+                # meaning a box has to be moved
+                if acting_query[2] == "box":
+                    box_to_move = tuple(acting_query[3].split(','))
+                    new_row, new_col = state.get_random_free_cell(self.max_row, self.max_col, self.walls)
+
+                    # defining a fictive goal state for the acting agent
+                    hacked_goal = deepcopy(self.goal_state)
+                    try:
+                        hacked_goal.boxes[box_to_move[0]][int(box_to_move[1])].append(
+                            (new_row, new_col, box_to_move[2]))
+                    except KeyError:
+                        hacked_goal.boxes[box_to_move[0]] = [(new_row, new_col, box_to_move[2])]
+
+                    self.agents[int(acting_agent)].assign_goal(hacked_goal, (box_to_move[0], int(box_to_move[1])))
+                    result = self.agents[int(acting_agent)].find_path_to_goal(self.walls)
+                    joint_action[int(acting_agent)] = result
+
+                    self.agents[int(waiting_agent)].forget_goal()
+                    joint_action[int(waiting_agent)] = get_noop(state, len(result))
+            except (ValueError, IndexError):
+                pass
+
+        return joint_action
 
 
 def main(args):
     level_data = None
 
-    if args.debugLevel is not None:
-        level_name = args.debugLevel
-        print("PYTHON DEBUG MODE: ACTIVATED\nDo not run together w/ java server")
-        print("Loading level:", level_name)
-
-        level_data = smt.sim_load_lvl(level_name)
-        if level_data is None:
-            print("Failed to load level. Quitting...")
-            return
-
-        print("Level loaded successfully!")
-    else:
-        # Read server messages from stdin.
-        msg_server_action("Starfish")
-        level_data = sys.stdin
+    # Read server messages from stdin.
+    msg_server_action("Starfish")
+    level_data = sys.stdin
 
     # Create client using server messages
     starfish_client = Client(level_data)
-    current_state = deepcopy(starfish_client.initial_state)
+    current_state = starfish_client.initial_state
     walls = starfish_client.walls
 
     # Solve and print
+    # TODO: configuration when an agent is blocking all the others
     solution = starfish_client.solve_level()
-    if sum([len(sol) for sol in solution]) == 0:
-        for i, agent in enumerate(starfish_client.agents):
-            if not agent.has_goal():
-                random_direct = random.choice([Direction.N, Direction.E, Direction.W, Direction.S])
-                move = State(current_state)
-                move.action = Action(ActionType.Move, random_direct, None)
-                solution[i] = [move]
-    else:
-        msg_server_comment("Found {} solution(s)".format(len(solution)))
+    if isListEmpty(solution):
+        coop = Cooperation(current_state, starfish_client.goal_state, starfish_client.walls)
+        queries = coop.get_needed_coop()
+        solution = starfish_client.queries_to_action(queries, current_state)
 
     nb_agents = len(solution)
-    solution = add_padding_actions(solution, nb_agents, current_state)
-
     printer = ";".join(['{}'] * nb_agents)
 
-    while len(solution[0]) > 0:
+    verified = False
+    while (not isListEmpty(solution)) or (verified == False):
+        missing_goals = get_missing_goals(current_state, starfish_client.goal_state)
+
+        if len(missing_goals) == 0:
+            verified = True
+
+        for i, elt in enumerate(solution):
+            if len(elt) == 0 and str(i) not in missing_goals:
+                padding_state = current_state
+                solution[i].append(padding_state)
+                solution[i][-1].action = Action(ActionType.NoOp, None, None)
+
+            elif len(elt) == 0 and str(i) in missing_goals:  # and not starfish_client.agents[i].has_goal():
+                starfish_client.agents[i].current_state = current_state
+                starfish_client.agents[i].assign_goal(starfish_client.goal_state, (missing_goals[str(i)][0], 0))
+                new_path = starfish_client.agents[i].find_path_to_goal(starfish_client.walls)
+
+                if new_path is not None and len(new_path) > 0:
+                    solution[i].extend(new_path)
+                else:
+                    padding_state = current_state
+                    solution[i].append(padding_state)
+                    solution[i][-1].action = Action(ActionType.NoOp, None, None)
+
         # grabbing state for each agent
         state = [elt[0] for elt in solution]
 
-        action = [agent.action for agent in state]
-        index_non_applicable, current_state, is_applicable = check_action(action, current_state, walls)
-        msg_server_comment(printer.format(*action) + " - applicable: {}".format(is_applicable))
+        joint_action = [agent.action for agent in state]
 
-        # if there is a conflict between agents then we recompute a new goal for each agent
+        index_non_applicable, current_state, is_applicable = check_action(joint_action, current_state, walls)
+        msg_server_comment(printer.format(*joint_action) + " - applicable: {}".format(is_applicable))
+
+        # if there is a conflict between agents
         if not is_applicable:
-            for key_agent in index_non_applicable:
-                action[int(key_agent)] = ActionType.NoOp
-            msg_server_comment("Switching to action: " + printer.format(*action))
+            conflict = Conflict(current_state, index_non_applicable, joint_action, solution, walls)
+            agents, actions = conflict.handle_conflicts()
 
-            new_solution = reassign_goals(
-                starfish_client.agents,
-                current_state,
-                starfish_client.goal_state,
-                walls,
-                starfish_client
-            )
-            new_solution = add_padding_actions(new_solution, nb_agents, current_state)
+            joint_action = [Action(ActionType.NoOp, None, None)] * nb_agents
+            for (agent, action) in zip(agents, actions):
+                if action is not None:
+                    joint_action[int(agent)] = action
+                    # forgetting goal in order to help fix the conflict
+                    padding_state = current_state
+                    solution[int(agent)] = [padding_state]
+                    solution[int(agent)][-1].action = Action(ActionType.NoOp, None, None)
+                    solution[int(agent)].append(solution[int(agent)][-1])
+                    starfish_client.agents[int(agent)].forget_goal()
 
-            # removing the actions from previous goal and adding the ones from the new goal
-            for i in range(len(solution)):
-                solution[i].clear()
-                solution[i].extend(new_solution[i])
-        else:
-            # removing the accomplished actions of each agent
-            for elt in solution:
+                else:
+                    box_key = starfish_client.agents[int(agent)].box_key
+                    starfish_client.agents[int(agent)] = Agent(current_state, agent)
+                    starfish_client.agents[int(agent)].assign_goal(starfish_client.goal_state, box_key)
+                    new_path_to_goal = starfish_client.agents[int(agent)].find_path_to_goal(walls)
+                    solution[int(agent)] = new_path_to_goal
+                    # print(new_path_to_goal)
+                    # sys.exit()
+
+            # updating state
+            _, current_state, _ = check_action(joint_action, current_state, walls)
+            msg_server_comment("New action: " + printer.format(*joint_action))
+
+        msg_server_action(printer.format(*joint_action))
+
+        if is_applicable:
+            for i, elt in enumerate(solution):
                 elt.pop(0)
-
-        msg_server_action(printer.format(*action))
-
-        # checking if goal state is reached once the action list is empty and
-        # checking reassigning the missing goals if it is not goal state
-        if len(solution[0]) == 0 and not current_state.is_goal_state(starfish_client.goal_state):
-            goals_missing = missing_goals(current_state, starfish_client.goal_state)
-            new_solution = reassign_goals(
-                starfish_client.agents,
-                current_state,
-                starfish_client.goal_state,
-                walls,
-                starfish_client,
-                goals_missing
-            )
-
-            # goal state not reached but the action list is empty, meaning that
-            # the agents are somehow blocked
-            if sum([getLen(sol) for sol in new_solution]) == 0:
-                for i, agent in enumerate(starfish_client.agents):
-                    if not agent.has_goal():
-                        random_direct = random.choice([Direction.N, Direction.E, Direction.W, Direction.S])
-                        move = State(current_state)
-                        move.action = Action(ActionType.Move, random_direct, None)
-                        new_solution[i] = [move]
-
-            new_solution = add_padding_actions(new_solution, nb_agents, current_state)
-            for i in range(getLen(solution)):
-                solution[i].extend(new_solution[i])
 
         response = level_data.readline().rstrip()
         if 'false' in response:
-            msg_server_err("Server answered with error to the action " + printer.format(*action))
+            msg_server_err("Server answered with error to the action " + printer.format(*joint_action))
 
 
 if __name__ == "__main__":

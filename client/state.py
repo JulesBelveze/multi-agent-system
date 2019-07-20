@@ -1,5 +1,7 @@
-from action import DIR_LOOKUP, ALL_ACTIONS, ActionType
+import random
+import operator
 import copy
+from action import DIR_LOOKUP, OPPOSITE_DIR, ALL_ACTIONS, ActionType, get_direction_moving_coord, Direction
 
 
 class State:
@@ -113,6 +115,27 @@ class State:
         child.action = action
         return child
 
+    def get_random_free_cell(self, max_row, max_col, walls, max_len=5):
+        '''function returning a random free cell in the map'''
+        is_free = False
+        while not is_free:
+            random_row, random_col = random.randint(1, max_row - 1), random.randint(1, max_col - 1)
+            is_free = self.is_free(walls, random_row, random_col)
+        return random_row, random_col
+
+    def get_free_neighbouring_cell(self, walls, row, col):
+        '''get a free neighbouring cell from a given one'''
+        moves = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+        for move in moves:
+            new_row, new_col = tuple(map(operator.add, move, (row, col)))
+            # no need to check the if the value is inside the map because it will be
+            # a wall if so
+            if self.is_free(walls, new_row, new_col):
+                return new_row, new_col
+
+        return None
+
     def is_free(self, walls, row, col):
         '''Function checking if a given position is free'''
         # checking if any wall is present
@@ -128,6 +151,73 @@ class State:
                 if row == box[0] and col == box[1]:
                     return False
         return True
+
+    def is_no_object(self, row, col):
+        '''same without checking the presence of walls'''
+        # checking if any agent is present
+        for key, agent in self.agents.items():
+            if row == agent[0] and col == agent[1]:
+                return False, "agent", self._get_agent_key_by_color(agent[2])
+        # checking if any box is present
+        for key, boxes in self.boxes.items():
+            for box in boxes:
+                if row == box[0] and col == box[1]:
+                    return False, "box", self._get_box_key_by_position(box[0], box[1])
+        return True, None, None
+
+    def get_freeing_actions(self, agent_key, walls):
+        '''finding actions to free others agents.
+        Agents will be free as soon as the blocking has three empty cells around him'''
+        moves, list_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)], []
+        agent_row, agent_col, agent_color = self.agents[agent_key]
+
+        lambda_is_free = lambda x: self.is_free(walls, x[0], x[1])
+        is_blocking = True
+        previous_direction = (1, 0)  # used to try the same direction at first
+        while is_blocking:
+
+            next_pos = [(elt[0] + agent_row, elt[1] + agent_col) for elt in moves]
+            free_positions = list(map(lambda_is_free, next_pos))
+
+            vertically_free, horizontally_free = free_positions[:2], free_positions[2:]
+
+            if sum(horizontally_free) == 1 and sum(vertically_free) == 1:
+                move = moves[2 + horizontally_free.index(True)]
+                dir = get_direction_moving_coord(move)
+                previous_dir = get_direction_moving_coord(previous_direction)
+                if dir == OPPOSITE_DIR[previous_dir]:
+                    move = moves[vertically_free.index(True)]
+                # print(DIR_MIRROR[previous_direction.name])
+            elif sum(horizontally_free) == 1:
+                move = moves[2 + horizontally_free.index(True)]
+            elif sum(horizontally_free) == 2:
+                move = moves[2] if previous_direction == moves[2] else moves[3]
+            elif sum(vertically_free) == 1:
+                move = moves[vertically_free.index(True)]
+            elif sum(vertically_free) == 2:
+                move = moves[0] if previous_direction == moves[0] else moves[1]
+            # print(move)
+            previous_direction = move
+            agent_row, agent_col = move[0] + agent_row, move[1] + agent_col
+            list_directions.append(get_direction_moving_coord(move))
+
+            if sum(vertically_free) + sum(horizontally_free) > 2:
+                is_blocking = False
+        return list_directions
+
+    def _get_box_key_by_position(self, row, col):
+        '''Return the key of a box at a given position'''
+        for key, boxes in self.boxes.items():
+            for i, box in enumerate(boxes):
+                row_box, col_box, _ = box
+                if row == row_box and col == col_box:
+                    return key, i
+        return None
+
+    def _get_agent_key_by_color(self, color):
+        for key, item in self.agents.items():
+            if item[2] == color:
+                return key, item
 
     def can_agent_push_box(self, new_agent, box):
         return box[0] == new_agent[0] and box[1] == new_agent[1]

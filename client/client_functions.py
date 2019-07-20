@@ -4,6 +4,7 @@ from state import State
 from action import Action
 from agent import Agent
 
+from copy import deepcopy
 from action import ActionType
 
 
@@ -15,6 +16,16 @@ def get_box_key_by_position(row, col, state: 'State'):
             if row == row_box and col == col_box:
                 return (key, i)
     return None
+
+
+def get_agent_key_by_color(color, agents):
+    for key, item in agents.items():
+        if item[2] == color:
+            return key, item
+
+
+def get_box_color_by_box_letter(boxes, letter):
+    return boxes[letter][0][2]
 
 
 def check_action(actions, current_state: 'State', walls):
@@ -46,6 +57,7 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
             elif action.action_type is ActionType.Push:
+
                 box_key = get_box_key_by_position(new_agent_row, new_agent_col, next_state)
                 new_box_row = new_agent_row + action.box_dir.d_row
                 new_box_col = new_agent_col + action.box_dir.d_col
@@ -75,10 +87,13 @@ def check_action(actions, current_state: 'State', walls):
                     index_non_applicable.append(i)
                     is_applicable = False
 
+    if not is_applicable:
+        next_state = current_state
+
     return index_non_applicable, next_state, is_applicable
 
 
-def missing_goals(current_state, goal_state):
+def get_missing_goals(current_state, goal_state):
     '''Return the index of the agents that haven't reached their goal and the
     corresponding box, ex: {'0': ('A', (3, 9, 'red'))}'''
     current_boxes = current_state.boxes
@@ -119,11 +134,24 @@ def add_padding_actions(solution, nb_agents, current_state):
     return solution
 
 
+def get_noop(current_state, nb_actions):
+    padding_state = deepcopy(current_state)
+    actions = [padding_state] * nb_actions
+    padding_state.action = Action(ActionType.NoOp, None, None)
+    return actions
+
+
 def getLen(obj):
     if obj is None:
         return 0
     else:
         return len(obj)
+
+
+def isListEmpty(inList):
+    if isinstance(inList, list):
+        return all(map(isListEmpty, inList))
+    return False
 
 
 def reassign_goals(agents, current_state: 'State', goal_state: 'State', walls, client: 'Client', goals_missing=None):

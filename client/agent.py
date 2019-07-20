@@ -11,6 +11,7 @@ from state import State
 
 from action import ALL_DIRECTIONS, DIR_MIRROR, ActionType
 
+
 class Agent:
     def __init__(self, initial_state: 'State', agent_key: 'str'):
         self.navigator = Navigate()
@@ -29,6 +30,12 @@ class Agent:
         except AttributeError:
             return False
         return True
+
+    def forget_goal(self):
+        try:
+            self.goal_state = None
+        except AttributeError:
+            pass
 
     def is_goal_reached(self):
         if not self.has_goal():
@@ -98,7 +105,8 @@ class Agent:
                 msg_server_comment("Found path from box {} to goal box".format(self.box_key))
                 flip_transition = False
 
-                if self.current_state.is_free(walls, g_box[0], g_box[1]) or agent[0] == g_box[0] and agent[1] == g_box[1]:
+                if self.current_state.is_free(walls, g_box[0], g_box[1]) or agent[0] == g_box[0] and agent[1] == g_box[
+                    1]:
                     # Second complete main goal - move box to goal
                     while not self.is_goal_reached():
                         agent_dir_values = self.get_direction_values(agent, path)
@@ -158,13 +166,18 @@ class Agent:
                                         agent_dir_value = item
                                         break
 
-                        child_state = self.current_state.get_child(walls, agent_dir_value, self.agent_key, box_dir_value, self.box_key)
+                        child_state = self.current_state.get_child(walls, agent_dir_value, self.agent_key,
+                                                                   box_dir_value, self.box_key)
                         if child_state is not None:
                             self.current_state = child_state
                             agent = self.current_state.agents.get(self.agent_key)
                             c_box = self.current_state.boxes.get(self.box_key[0])[self.box_key[1]]
                         else:
-                            msg_server_err("FAILED to create child state from: Agent {} [{}], Box  {} [{}]".format(agent, agent_dir_value, c_box, box_dir_value))
+                            msg_server_err(
+                                "FAILED to create child state from: Agent {} [{}], Box  {} [{}]".format(agent,
+                                                                                                        agent_dir_value,
+                                                                                                        c_box,
+                                                                                                        box_dir_value))
                             break
 
                 final_actions = self.current_state.extract_plan()
