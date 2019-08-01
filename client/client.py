@@ -134,7 +134,7 @@ class Client:
                         result = self.agents[key_agent].find_path_to_goal(self.walls)
                         if result is not None and len(result) > 0:
                             steps.extend(result)
-                        solutions.append(steps)
+                        solutions.insert(key_agent, steps)
                 except IndexError:
                     continue
 
@@ -187,7 +187,7 @@ class Client:
 
                     self.agents[int(waiting_agent)].forget_goal()
                     joint_action[int(waiting_agent)] = get_noop(state, 2)
-            except (ValueError, IndexError):
+            except ValueError:
                 pass
 
             try:
@@ -201,7 +201,7 @@ class Client:
                     try:
                         hacked_goal.boxes[box_to_move[0]][int(box_to_move[1])].append(
                             (new_row, new_col, box_to_move[2]))
-                    except KeyError:
+                    except (KeyError, AttributeError):
                         hacked_goal.boxes[box_to_move[0]] = [(new_row, new_col, box_to_move[2])]
 
                     self.agents[int(acting_agent)].assign_goal(hacked_goal, (box_to_move[0], int(box_to_move[1])))
@@ -242,9 +242,13 @@ def main(args):
     verified = False
     while (not isListEmpty(solution)) or (verified == False):
         missing_goals = get_missing_goals(current_state, starfish_client.goal_state)
-
         if len(missing_goals) == 0:
             verified = True
+
+        if isListEmpty(solution):
+            coop = Cooperation(current_state, starfish_client.goal_state, starfish_client.walls)
+            queries = coop.get_needed_coop()
+            solution = starfish_client.queries_to_action(queries, current_state)
 
         for i, elt in enumerate(solution):
             if len(elt) == 0 and str(i) not in missing_goals:
@@ -281,6 +285,7 @@ def main(args):
             for (agent, action) in zip(agents, actions):
                 if action is not None:
                     joint_action[int(agent)] = action
+
                     # forgetting goal in order to help fix the conflict
                     padding_state = current_state
                     solution[int(agent)] = [padding_state]
