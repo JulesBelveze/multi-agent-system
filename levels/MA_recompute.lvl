@@ -1,20 +1,20 @@
 #domain
 hospital
 #levelname
-MA_2_box_no_goal
+MA_recompute
 #colors
-green: 0, A
-red: 1, B
+red: 0, A
+green: 1, B
 #initial
 ++++++++++++
-+          +
-+1 A       +
-+0 B       +
++  A       +
+++++0+++++ +
++1B        +
 ++++++++++++
 #goal
 ++++++++++++
++A   B     +
+++++ +++++ +
 +          +
-+         B+
-+         A+
 ++++++++++++
 #end

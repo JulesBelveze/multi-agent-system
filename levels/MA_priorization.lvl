@@ -1,0 +1,22 @@
+#domain
+hospital
+#levelname
+MA_priorization
+#colors
+red: 0, A, B
+green: 1, C
+#initial
++++++++++
++      C+
+++++B   +
++1  0   +
++      A+
++++++++++
+#goal
++++++++++
++BAC    +
+++++    +
++       +
++       +
++++++++++
+#end
